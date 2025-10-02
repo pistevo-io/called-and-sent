@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 1001" fill="none" stroke="#0ea5e9" stroke-width="1">
+  <!-- Simplified world map continents outline -->
+
+  <!-- North America -->
+  <path d="M150,150 L180,120 L220,110 L260,100 L300,110 L340,130 L360,160 L370,200 L360,240 L340,280 L300,300 L260,310 L220,300 L190,280 L170,250 L160,210 L150,170 Z"/>
+
+  <!-- South America -->
+  <path d="M300,350 L320,320 L340,330 L360,360 L370,400 L380,450 L370,500 L350,540 L320,560 L290,550 L270,520 L260,480 L270,440 L280,400 L290,370 Z"/>
+
+  <!-- Europe -->
+  <path d="M480,140 L510,130 L540,135 L560,145 L570,160 L565,180 L550,190 L530,195 L510,190 L490,180 L480,165 Z"/>
+
+  <!-- Africa -->
+  <path d="M500,220 L530,215 L560,220 L580,240 L590,280 L595,330 L590,380 L580,430 L560,470 L530,490 L500,495 L470,485 L450,460 L440,420 L445,370 L460,320 L480,270 Z"/>
+
+  <!-- Asia -->
+  <path d="M600,120 L650,110 L700,105 L750,110 L800,120 L840,140 L870,170 L880,210 L870,250 L850,280 L820,300 L780,310 L740,305 L700,290 L670,270 L640,240 L620,200 L610,160 Z"/>
+
+  <!-- Australia -->
+  <path d="M850,400 L880,395 L910,400 L930,420 L935,450 L930,480 L910,500 L880,505 L850,500 L830,480 L825,450 L830,420 Z"/>
+
+  <!-- Antarctica -->
+  <path d="M200,580 L300,575 L400,570 L500,575 L600,580 L700,575 L800,570 L900,575 L900,600 L800,605 L700,610 L600,605 L500,600 L400,605 L300,610 L200,605 Z"/>
+
+  <!-- Japan -->
+  <path d="M920,220 L930,210 L940,215 L945,230 L940,245 L930,250 L920,245 Z"/>
+
+  <!-- UK -->
+  <path d="M460,150 L470,145 L475,150 L473,160 L468,165 L463,163 Z"/>
+
+  <!-- Scandinavia -->
+  <path d="M510,90 L520,85 L530,88 L535,100 L530,115 L520,120 L512,115 L508,105 Z"/>
+
+  <!-- Mediterranean -->
+  <ellipse cx="530" cy="200" rx="80" ry="20" stroke-dasharray="5,5"/>
+
+  <!-- Connection lines between continents -->
+  <path d="M360,200 Q420,180 480,170" stroke-dasharray="3,3" opacity="0.5"/>
+  <path d="M550,190 Q600,160 650,150" stroke-dasharray="3,3" opacity="0.5"/>
+  <path d="M530,220 Q565,240 600,250" stroke-dasharray="3,3" opacity="0.5"/>
+  <path d="M820,300 Q835,350 850,400" stroke-dasharray="3,3" opacity="0.5"/>
+
+  <!-- Major cities markers -->
+  <circle cx="200" cy="200" r="3" fill="#0ea5e9"/>
+  <circle cx="300" cy="280" r="3" fill="#0ea5e9"/>
+  <circle cx="340" cy="450" r="3" fill="#0ea5e9"/>
+  <circle cx="520" cy="160" r="3" fill="#0ea5e9"/>
+  <circle cx="540" cy="320" r="3" fill="#0ea5e9"/>
+  <circle cx="720" cy="200" r="3" fill="#0ea5e9"/>
+  <circle cx="880" cy="450" r="3" fill="#0ea5e9"/>
+</svg>

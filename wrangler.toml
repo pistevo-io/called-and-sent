@@ -1,0 +1,20 @@
+# Cloudflare Worker Configuration
+# https://developers.cloudflare.com/workers/wrangler/configuration/
+
+name = "called-and-sent-contact-form"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# KV Namespace for rate limiting
+# You'll need to create this in Cloudflare dashboard
+[[kv_namespaces]]
+binding = "CONTACT_FORM_KV"
+id = "YOUR_KV_NAMESPACE_ID" # Replace with your KV namespace ID
+
+# Environment variables
+# Set YOUR_EMAIL in the Cloudflare dashboard under Worker settings
+# Do NOT put your actual email here - use the dashboard for security
+
+# Routes - configure this after deploying
+# This Worker will handle requests to /api/contact
+# Example: https://yourdomain.com/api/contact

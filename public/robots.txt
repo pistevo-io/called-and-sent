@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# Prevent profile images from being indexed
+User-agent: *
+Disallow: /profile.jpeg
+Disallow: /mine.png

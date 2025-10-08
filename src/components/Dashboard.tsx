@@ -131,7 +131,7 @@ export default function Dashboard({ trips, onTripSelect }: DashboardProps) {
                   className="bg-gradient-to-r from-mission-900/50 to-mission-800/50 border-2 border-mission-600 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl hover:shadow-mission-500/30 hover:border-mission-400 hover:-translate-y-1 transition-all duration-300 cursor-pointer group"
                 >
                   <div className="flex flex-col md:flex-row">
-                    <div className="md:w-1/3 h-48 md:h-auto relative overflow-hidden">
+                    <div className="md:w-1/3 h-64 relative overflow-hidden">
                       <img
                         src={trip.images[0]}
                         alt={trip.location}
@@ -283,7 +283,7 @@ export default function Dashboard({ trips, onTripSelect }: DashboardProps) {
                 className="bg-gray-800 border border-gray-700 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl hover:shadow-mission-500/20 hover:border-mission-500 hover:-translate-y-1 transition-all duration-300 cursor-pointer group"
               >
                 <div className="flex flex-col md:flex-row">
-                  <div className="md:w-1/3 h-48 md:h-auto relative overflow-hidden">
+                  <div className="md:w-1/3 h-64 relative overflow-hidden">
                     <img
                       src={trip.images[0]}
                       alt={trip.location}

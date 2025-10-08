@@ -90,8 +90,8 @@ export default function TripModal({ trip, onClose }: TripModalProps) {
             </button>
           </div>
 
-          <div className="p-8 overflow-y-auto max-h-96">
-            <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="p-8 overflow-y-auto max-h-[500px]">
+            <div className="grid grid-cols-3 gap-4 mb-8 pb-6 border-b border-gray-200">
               <div className="flex items-center gap-2 text-gray-600">
                 <Calendar className="w-5 h-5 text-mission-600" />
                 <div>
@@ -117,33 +117,39 @@ export default function TripModal({ trip, onClose }: TripModalProps) {
               )}
             </div>
 
-            <div className="mb-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Mission Story</h3>
-              <p className="text-gray-700 leading-relaxed">{trip.story}</p>
+            <div className="mb-8">
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">Mission Story</h3>
+              <div className="prose prose-lg max-w-none">
+                {trip.story.split('\n\n').map((paragraph, index) => (
+                  <p key={index} className="text-gray-700 leading-loose mb-6 last:mb-0">
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
             </div>
 
-            <div className="mb-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+            <div className="mb-8 pb-6 border-b border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <Heart className="w-5 h-5 text-mission-600" fill="currentColor" />
                 Highlights
               </h3>
-              <ul className="space-y-2">
+              <ul className="space-y-3">
                 {trip.highlights.map((highlight, index) => (
-                  <li key={index} className="flex items-start gap-2 text-gray-700">
-                    <span className="text-mission-600 font-bold">+</span>
-                    <span>{highlight}</span>
+                  <li key={index} className="flex items-start gap-3 text-gray-700">
+                    <span className="text-mission-600 font-bold text-lg">+</span>
+                    <span className="leading-relaxed">{highlight}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 mb-2">Ministry Types</h3>
+              <h3 className="text-sm font-semibold text-gray-500 mb-3">Ministry Types</h3>
               <div className="flex flex-wrap gap-2">
                 {trip.ministryType.map((type, index) => (
                   <span
                     key={index}
-                    className="px-3 py-1 bg-mission-100 text-mission-700 rounded-full text-sm font-medium"
+                    className="px-4 py-2 bg-mission-100 text-mission-700 rounded-full text-sm font-medium"
                   >
                     {type}
                   </span>

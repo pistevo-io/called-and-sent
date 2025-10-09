@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Heart, Globe, Mail, Phone, MapPin } from 'lucide-react';
+import { X, Heart, Globe, MapPin } from 'lucide-react';
 
 interface AboutModalProps {
   isOpen: boolean;
@@ -59,10 +59,19 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 My Calling
               </h3>
               <p className="text-gray-700 leading-relaxed mb-4">
-                I am called to share the Gospel of Jesus Christ with the nations. My journey is rooted in the Great Commission of Matthew 28:19-20: "Therefore go and make disciples of all nations, baptizing them in the name of the Father and of the Son and of the Holy Spirit, and teaching them to obey everything I have commanded you."
+                My calling to missions was planted early. Growing up, my parents showed me what generous love looks like. Every Sunday after church, my mom would prepare meal packages for about 10 homeless people in our rural area in India, and my dad and I would deliver them by motorcycle. As a child traveling miles on that bike to carry water pots for our own family, I learned dependence on God's provision. Today, I witness His faithfulness - serving on water trucks in Honduras, once a receiver, now a giver.
+              </p>
+              <p className="text-gray-700 leading-relaxed mb-4">
+                During college, I started a non-profit feeding children, and it satisfied my soul deeply. But I didn't yet understand I could share the Gospel alongside meeting physical needs. That changed when I heard the true Gospel of grace at Edmond First Baptist Church in Oklahoma - salvation is a gift through faith in Jesus alone, not by works (Ephesians 2:8-9). This revelation transformed everything.
+              </p>
+              <p className="text-gray-700 leading-relaxed mb-4">
+                Late in 2024, I asked my mom at dinner, "Why would God let you into Heaven?" Her answer revealed she was trusting in works, not grace. I had to lovingly correct her, pointing to Scripture. I had a similar conversation with my dad in early 2025, and with my best friend. That's when it became clear: <strong>I cannot assume everyone knows the true Gospel, even those who grew up in church.</strong>
+              </p>
+              <p className="text-gray-700 leading-relaxed mb-4">
+                When I heard my pastor share about missionaries serving around the world, I felt convicted and dedicated my life to missions. But obedience took time - I didn't go on my first trip until July 2025. Now I am called to give generously to the needy and share the Gospel boldly, trusting that the Holy Spirit will give me the words when I need them (Luke 12:11-12). It brings me joy to serve people and share the Good News.
               </p>
               <p className="text-gray-700 leading-relaxed">
-                Through mission trips around the world, I serve those in need while sharing the transformative message of Christ's love. Each journey strengthens my faith and deepens my commitment to following God's call on my life.
+                I'm rooted in the Great Commission (Matthew 28:19-20), trusting God's provision (Matthew 6:26-30, Philippians 4:19), and proclaiming that salvation is by grace through faith alone (Ephesians 2:8-9). How beautiful are the feet of those who bring good news (Romans 10:14-15)! In everything I do, I do it all for the glory of God (1 Corinthians 10:31).
               </p>
             </div>
 
@@ -71,77 +80,86 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 <Globe className="w-6 h-6 text-mission-600" />
                 My Mission Work
               </h3>
+              <p className="text-gray-700 leading-relaxed mb-4">
+                I'm most passionate about combining <strong>humanitarian work with Gospel proclamation</strong> - meeting physical needs (food, water, clothing, medical care) while sharing the Good News of Jesus. I serve in whatever capacity is needed on any given day, whether that's medical support, logistics, or distribution. But I always keep my heart and ears open to share the Gospel, because if God puts me in a situation, He has prepared someone there to hear - whether my testimony or the message of salvation.
+              </p>
+              <p className="text-gray-700 leading-relaxed mb-4">
+                I believe in <strong>partnering with local believers</strong> rather than going solo. God has shown me that I don't have to be present for the work to continue - He provides the workers, He prepares the hearts, and He brings the harvest. My role is obedience and faithfulness.
+              </p>
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold text-gray-900 mb-2">Medical Missions</h4>
-                  <p className="text-gray-600 text-sm">Serving underserved communities with healthcare and medical support.</p>
+                  <h4 className="font-semibold text-gray-900 mb-2">Medical Missions + Evangelism</h4>
+                  <p className="text-gray-600 text-sm">Medical care for underserved communities paired with village-to-village Gospel sharing (Honduras with BMDMI).</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold text-gray-900 mb-2">Youth Ministry</h4>
-                  <p className="text-gray-600 text-sm">Empowering young people through education, mentorship, and spiritual guidance.</p>
+                  <h4 className="font-semibold text-gray-900 mb-2">Youth Ministry + Gospel</h4>
+                  <p className="text-gray-600 text-sm">Sports camps, mentorship, and teaching the "I Am" statements of Jesus (Paraguay basketball camp).</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold text-gray-900 mb-2">Community Building</h4>
-                  <p className="text-gray-600 text-sm">Contributing to sustainable development through construction and community projects.</p>
+                  <h4 className="font-semibold text-gray-900 mb-2">Unreached Peoples Evangelism</h4>
+                  <p className="text-gray-600 text-sm">Partnering with local missionaries to share Jesus' name with those who have never heard (Southeast Asia).</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold text-gray-900 mb-2">Disaster Relief</h4>
-                  <p className="text-gray-600 text-sm">Providing emergency aid and recovery support in times of crisis.</p>
+                  <h4 className="font-semibold text-gray-900 mb-2">Humanitarian Aid + Witness</h4>
+                  <p className="text-gray-600 text-sm">Water distribution, food packages, and meeting practical needs while looking for divine appointments.</p>
                 </div>
               </div>
             </div>
 
             <div className="mb-8">
               <h3 className="text-2xl font-bold text-gray-900 mb-4">My Faith Journey</h3>
-              <ul className="space-y-3">
+              <p className="text-gray-700 leading-relaxed mb-4">
+                My faith journey spans generations and continents, marked by moments of courage, revelation, and obedience:
+              </p>
+              <ul className="space-y-4">
                 <li className="flex items-start gap-3 text-gray-700">
-                  <span className="text-mission-600 font-bold text-xl">+</span>
+                  <span className="text-mission-600 font-bold text-xl flex-shrink-0">+</span>
                   <div>
-                    <span className="font-semibold">Faith-Centered:</span> Christ is at the heart of everything I do
+                    <span className="font-semibold">My Uncle's Bold Obedience (Foundation):</span> My dad and his side of the family were non-believers who worshiped idols. My uncle heard the Gospel, believed, and then did something extraordinary - he replaced all the idols in my dad's home with Bibles. He risked being disowned or beaten to share the Good News with our entire family. That's how my dad came to faith, and that's how God's living Word entered our lives. When my uncle passed in early 2023, I fully understood the weight of his sacrifice. His courage reminds me that sharing the Gospel is worth any cost, and there are believers around the world who risk everything to proclaim Jesus.
                   </div>
                 </li>
                 <li className="flex items-start gap-3 text-gray-700">
-                  <span className="text-mission-600 font-bold text-xl">+</span>
+                  <span className="text-mission-600 font-bold text-xl flex-shrink-0">+</span>
                   <div>
-                    <span className="font-semibold">Compassionate Service:</span> Meeting physical and spiritual needs with love
+                    <span className="font-semibold">Grace Revelation (Edmond First Baptist, Oklahoma):</span> During my college years in the US, I attended Edmond First Baptist Church in Oklahoma where I truly understood the Gospel of grace for the first time. Salvation is a gift received through faith in Jesus alone - not earned by works (Ephesians 2:8-9). This changed everything for me.
                   </div>
                 </li>
                 <li className="flex items-start gap-3 text-gray-700">
-                  <span className="text-mission-600 font-bold text-xl">+</span>
+                  <span className="text-mission-600 font-bold text-xl flex-shrink-0">+</span>
                   <div>
-                    <span className="font-semibold">Cultural Respect:</span> Honoring and learning from the communities I serve
+                    <span className="font-semibold">Full-Circle Gospel Conversations (2024-2025):</span> Late in 2024, I asked my mom a simple question at dinner: "Why would God let you into Heaven?" Her answer revealed she was trusting in her works. I lovingly corrected her with Scripture. I had similar conversations with my dad (early 2025) and my best friend (2025). God used me to share the Gospel with the very people who brought me to church - full circle. This ignited my passion for missions, realizing I can't assume anyone truly knows the Gospel.
                   </div>
                 </li>
                 <li className="flex items-start gap-3 text-gray-700">
-                  <span className="text-mission-600 font-bold text-xl">+</span>
+                  <span className="text-mission-600 font-bold text-xl flex-shrink-0">+</span>
                   <div>
-                    <span className="font-semibold">Lasting Relationships:</span> Building connections that transform lives
+                    <span className="font-semibold">First Mission Trip (July 2025 - Paraguay):</span> After hearing my pastor share about missionaries serving globally, I felt convicted and dedicated my life to missions. But obedience took time. I finally went on my first trip to Paraguay in July 2025, and it confirmed everything. God orchestrates divine appointments - not accidents, but intentional encounters where He is already at work. Now I'm committed to go wherever He sends me.
+                  </div>
+                </li>
+                <li className="flex items-start gap-3 text-gray-700">
+                  <span className="text-mission-600 font-bold text-xl flex-shrink-0">+</span>
+                  <div>
+                    <span className="font-semibold">Answered Prayer - Honduras (September 2025):</span> Before my Honduras trip, I prayed specifically to witness at least one salvation. God answered powerfully when a woman came to faith in Christ, tears streaming down her face as she heard the Gospel. Witnessing that moment of transformation reminded me that this work is all for God's glory, not my own. He saves. I'm just obedient.
                   </div>
                 </li>
               </ul>
+              <p className="text-gray-700 leading-relaxed mt-6 font-semibold">
+                My values: Trust God's provision. Partner with local believers. Expect divine appointments. Meet physical needs AND share the Gospel. Be boldly obedient despite consequences.
+              </p>
             </div>
 
             <div className="border-t border-gray-200 pt-6">
               <h3 className="text-xl font-bold text-gray-900 mb-4">Connect With Me</h3>
               <div className="space-y-3 text-gray-700">
-                <div className="flex items-center gap-3">
-                  <Mail className="w-5 h-5 text-mission-600" />
-                  <a href="mailto:your.email@example.com" className="hover:text-mission-600 transition-colors">
-                    your.email@example.com
-                  </a>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Phone className="w-5 h-5 text-mission-600" />
-                  <a href="tel:+1234567890" className="hover:text-mission-600 transition-colors">
-                    +1 (234) 567-890
-                  </a>
-                </div>
                 <div className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-mission-600 mt-0.5" />
                   <div>
-                    Your City, State
+                    Oklahoma, USA
                   </div>
                 </div>
+                <p className="text-sm text-gray-600 mt-4">
+                  Want to connect about missions, partner in prayer, or learn more? Use the "Partner With Me" button to send a message through the contact form.
+                </p>
               </div>
             </div>
           </div>

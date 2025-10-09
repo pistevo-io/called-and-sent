@@ -3,11 +3,6 @@
 
 export default {
   async fetch(request, env) {
-    // Only allow POST requests
-    if (request.method !== 'POST') {
-      return new Response('Method not allowed', { status: 405 });
-    }
-
     // CORS headers
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
@@ -15,9 +10,14 @@ export default {
       'Access-Control-Allow-Headers': 'Content-Type',
     };
 
-    // Handle OPTIONS request for CORS
+    // Handle OPTIONS request for CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders });
+    }
+
+    // Only allow POST requests
+    if (request.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405 });
     }
 
     try {
@@ -64,9 +64,9 @@ export default {
       const ip = request.headers.get('CF-Connecting-IP');
       const rateLimitKey = `ratelimit:${ip}`;
 
-      // Check rate limit (max 5 submissions per hour)
+      // Check rate limit (max 10 submissions per hour - increased for testing)
       const rateLimit = await env.CONTACT_FORM_KV.get(rateLimitKey);
-      if (rateLimit && parseInt(rateLimit) >= 5) {
+      if (rateLimit && parseInt(rateLimit) >= 10) {
         return new Response(
           JSON.stringify({ error: 'Too many requests. Please try again later.' }),
           {
@@ -90,7 +90,7 @@ export default {
           },
         ],
         from: {
-          email: 'noreply@calledandsent.com', // Use your domain
+          email: 'noreply@calledandsent.me',
           name: 'Called & Sent Contact Form',
         },
         reply_to: {
@@ -159,7 +159,12 @@ Time: ${new Date().toISOString()}
         ],
       };
 
-      // Send email via MailChannels
+      // TODO: Email sending temporarily disabled - configure MailChannels DNS or switch to Resend
+      // For now, just log the submission
+      console.log('Contact form submission:', { name, email, message });
+
+      // Uncomment when email is configured:
+      /*
       const emailResponse = await fetch('https://api.mailchannels.net/tx/v1/send', {
         method: 'POST',
         headers: {
@@ -169,8 +174,11 @@ Time: ${new Date().toISOString()}
       });
 
       if (!emailResponse.ok) {
-        throw new Error('Failed to send email');
+        const errorText = await emailResponse.text();
+        console.error('MailChannels error:', emailResponse.status, errorText);
+        throw new Error(`Failed to send email: ${emailResponse.status} - ${errorText}`);
       }
+      */
 
       // Return success response
       return new Response(

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Heart, DollarSign, ShoppingBag, ExternalLink, Copy, Check, Share2, Facebook, Mail, Instagram, MessageCircle, Users } from 'lucide-react';
+import { X, Heart, DollarSign, ShoppingBag, Copy, Check, Share2, Facebook, Mail, Instagram, MessageCircle, Users } from 'lucide-react';
 
 interface SupportModalProps {
   isOpen: boolean;
@@ -34,7 +34,8 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
     setFormStatus('sending');
 
     try {
-      const response = await fetch('/api/contact', {
+      // Temporarily using direct worker URL for testing
+      const response = await fetch('https://called-and-sent-contact-form.online-752.workers.dev', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

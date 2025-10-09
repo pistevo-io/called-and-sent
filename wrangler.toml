@@ -9,11 +9,11 @@ compatibility_date = "2024-01-01"
 # You'll need to create this in Cloudflare dashboard
 [[kv_namespaces]]
 binding = "CONTACT_FORM_KV"
-id = "YOUR_KV_NAMESPACE_ID" # Replace with your KV namespace ID
+id = "454fe16d9d694ce09986680200215b77"
 
 # Environment variables
-# Set YOUR_EMAIL in the Cloudflare dashboard under Worker settings
-# Do NOT put your actual email here - use the dashboard for security
+[vars]
+YOUR_EMAIL = "contact@calledandsent.me"
 
 # Routes - configure this after deploying
 # This Worker will handle requests to /api/contact

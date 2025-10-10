@@ -28,18 +28,15 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
   });
   const [formStatus, setFormStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const [debugInfo, setDebugInfo] = useState<any>(null);
   const [turnstileToken, setTurnstileToken] = useState<string>('');
   const turnstileRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string>('');
 
   useEffect(() => {
     if (isOpen && turnstileRef.current && window.turnstile && !widgetIdRef.current) {
-      console.log('Rendering Turnstile widget...');
       widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
         sitekey: '0x4AAAAAAB5vVKg7Y7twKuIb',
         callback: (token: string) => {
-          console.log('Turnstile token received');
           setTurnstileToken(token);
         },
       });
@@ -63,7 +60,6 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
     e.preventDefault();
 
     if (!turnstileToken) {
-      console.warn('Turnstile token not available');
       setFormStatus('error');
       setErrorMessage('Please complete the security check');
       setTimeout(() => {
@@ -75,10 +71,6 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
 
     setFormStatus('sending');
     setErrorMessage('');
-    setDebugInfo(null);
-
-    console.log('Submitting contact form...');
-    console.log('Turnstile token present:', !!turnstileToken);
 
     try {
       const response = await fetch('/api/contact', {
@@ -93,12 +85,9 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
       });
 
       const responseData = await response.json();
-      console.log('Response status:', response.status);
-      console.log('Response data:', responseData);
 
       if (response.ok) {
         setFormStatus('success');
-        setDebugInfo(responseData.debug);
         setFormData({ name: '', email: '', message: '' });
         setTurnstileToken('');
         if (widgetIdRef.current && window.turnstile) {
@@ -106,13 +95,10 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
         }
         setTimeout(() => {
           setFormStatus('idle');
-          setDebugInfo(null);
-        }, 10000);
+        }, 5000);
       } else {
-        console.error('Form submission error:', responseData);
         setFormStatus('error');
-        setErrorMessage(responseData.error || 'Unknown error');
-        setDebugInfo(responseData);
+        setErrorMessage(responseData.error || 'Something went wrong. Please try again.');
         if (widgetIdRef.current && window.turnstile) {
           window.turnstile.reset(widgetIdRef.current);
         }
@@ -120,13 +106,11 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
         setTimeout(() => {
           setFormStatus('idle');
           setErrorMessage('');
-          setDebugInfo(null);
-        }, 10000);
+        }, 5000);
       }
     } catch (error) {
-      console.error('Form submission error:', error);
       setFormStatus('error');
-      setErrorMessage(error instanceof Error ? error.message : 'Network error');
+      setErrorMessage('Network error. Please check your connection and try again.');
       if (widgetIdRef.current && window.turnstile) {
         window.turnstile.reset(widgetIdRef.current);
       }
@@ -134,7 +118,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
       setTimeout(() => {
         setFormStatus('idle');
         setErrorMessage('');
-      }, 10000);
+      }, 5000);
     }
   };
 
@@ -341,28 +325,15 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
 
                   {formStatus === 'success' && (
                     <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
-                      <div className="font-semibold mb-1">✓ Message sent successfully!</div>
-                      <div className="text-xs">I'll get back to you soon.</div>
-                      {debugInfo && (
-                        <div className="mt-2 pt-2 border-t border-green-300 text-xs font-mono">
-                          <div>Database: {debugInfo.db_stored ? '✓ Stored' : '✗ Not stored'}</div>
-                          <div>Notification: {debugInfo.notification_sent ? '✓ Sent' : '✗ Not sent'}</div>
-                          <div>Rate limit: {debugInfo.rate_limit_applied ? '✓ Active' : '✗ Disabled'}</div>
-                        </div>
-                      )}
+                      <div className="font-semibold">✓ Message sent successfully!</div>
+                      <div className="text-xs mt-1">I'll get back to you soon.</div>
                     </div>
                   )}
 
                   {formStatus === 'error' && (
                     <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
-                      <div className="font-semibold mb-1">✗ Something went wrong</div>
-                      {errorMessage && <div className="text-xs mb-2">{errorMessage}</div>}
-                      <div className="text-xs">Please try again or check the browser console for details.</div>
-                      {debugInfo && (
-                        <div className="mt-2 pt-2 border-t border-red-300 text-xs font-mono">
-                          <div>Debug info: {JSON.stringify(debugInfo, null, 2)}</div>
-                        </div>
-                      )}
+                      <div className="font-semibold">✗ {errorMessage || 'Something went wrong'}</div>
+                      <div className="text-xs mt-1">Please try again.</div>
                     </div>
                   )}
                 </form>

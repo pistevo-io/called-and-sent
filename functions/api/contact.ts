@@ -1,25 +1,7 @@
-// Pages Function for Contact Form
-// This handles form submissions, stores in D1, and sends ntfy notification
+// Simplified test version
+export async function onRequestPost(context: any) {
+  console.log('=== FUNCTION CALLED ===');
 
-interface Env {
-  DB: D1Database;
-  CONTACT_FORM_KV: KVNamespace;
-  TURNSTILE_SECRET_KEY: string;
-  NTFY_TOPIC: string;
-}
-
-export const onRequestPost: PagesFunction<Env> = async (context) => {
-  const { request, env } = context;
-
-  console.log('Contact form function called');
-  console.log('Env bindings check:', {
-    hasDB: !!env.DB,
-    hasKV: !!env.CONTACT_FORM_KV,
-    hasTurnstile: !!env.TURNSTILE_SECRET_KEY,
-    hasNtfy: !!env.NTFY_TOPIC
-  });
-
-  // CORS headers
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -27,169 +9,34 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   };
 
   try {
-    // Parse the form data
-    console.log('Parsing form data...');
-    const data = await request.json() as {
-      name: string;
-      email: string;
-      message: string;
-      'cf-turnstile-response': string;
-      website?: string;
-    };
+    const { request, env } = context;
 
-    const { name, email, message, 'cf-turnstile-response': turnstileToken } = data;
+    console.log('Has DB:', !!env?.DB);
+    console.log('Has KV:', !!env?.CONTACT_FORM_KV);
 
-    // Basic validation
-    if (!name || !email || !message) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
+    const data = await request.json();
+    console.log('Received data:', data);
 
-    // Verify Turnstile token - TEMPORARILY DISABLED FOR TESTING
-    // TODO: Re-enable after confirming D1 and other bindings work
-    /*
-    if (!turnstileToken) {
-      return new Response(
-        JSON.stringify({ error: 'Captcha verification required' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    const turnstileVerifyUrl = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
-    const turnstileResponse = await fetch(turnstileVerifyUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        secret: env.TURNSTILE_SECRET_KEY,
-        response: turnstileToken,
-        remoteip: request.headers.get('CF-Connecting-IP'),
-      }),
-    });
-
-    const turnstileResult = await turnstileResponse.json() as { success: boolean };
-    if (!turnstileResult.success) {
-      console.error('Turnstile verification failed:', turnstileResult);
-      return new Response(
-        JSON.stringify({ error: 'Captcha verification failed' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-    */
-    console.log('Turnstile check temporarily disabled for testing');
-
-    // Simple email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid email address' }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    // Basic spam detection (honeypot)
-    if (data.website) {
-      return new Response(
-        JSON.stringify({ success: true }), // Fake success for bots
-        {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    // Rate limiting using client IP
-    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-    const rateLimitKey = `ratelimit:${ip}`;
-
-    // Check rate limit (max 10 submissions per hour)
-    const rateLimit = await env.CONTACT_FORM_KV.get(rateLimitKey);
-    if (rateLimit && parseInt(rateLimit) >= 10) {
-      return new Response(
-        JSON.stringify({ error: 'Too many requests. Please try again later.' }),
-        {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    // Increment rate limit counter
-    const currentCount = rateLimit ? parseInt(rateLimit) + 1 : 1;
-    await env.CONTACT_FORM_KV.put(rateLimitKey, currentCount.toString(), {
-      expirationTtl: 3600 // 1 hour
-    });
-
-    // Store in D1 database
-    console.log('Attempting to store in D1...');
-    const userAgent = request.headers.get('User-Agent') || 'unknown';
-
-    try {
-      await env.DB.prepare(
-        'INSERT INTO submissions (name, email, message, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)'
-      ).bind(name, email, message, ip, userAgent).run();
-      console.log('Contact form submission stored successfully:', { name, email });
-    } catch (dbError) {
-      console.error('D1 insert error:', dbError);
-      throw dbError;
-    }
-
-    // Send minimal notification to ntfy.sh (no personal data)
-    if (env.NTFY_TOPIC) {
-      try {
-        await fetch(`https://ntfy.sh/${env.NTFY_TOPIC}`, {
-          method: 'POST',
-          body: 'New contact form submission received',
-          headers: {
-            'Title': 'Called & Sent Contact',
-            'Priority': 'high',
-            'Tags': 'email'
-          }
-        });
-      } catch (error) {
-        console.error('ntfy notification failed:', error);
-        // Don't fail the request if notification fails
-      }
-    }
-
-    // Return success response
     return new Response(
-      JSON.stringify({ success: true, message: 'Message sent successfully' }),
+      JSON.stringify({ success: true, message: 'Test successful!', debug: { hasDB: !!env?.DB, hasKV: !!env?.CONTACT_FORM_KV } }),
       {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
-
-  } catch (error) {
-    console.error('Error processing form:', error);
+  } catch (error: any) {
+    console.error('ERROR:', error.message, error.stack);
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: error.message }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
-};
+}
 
-// Handle OPTIONS for CORS preflight
-export const onRequestOptions: PagesFunction = async () => {
+export async function onRequestOptions() {
   return new Response(null, {
     headers: {
       'Access-Control-Allow-Origin': '*',
@@ -197,4 +44,4 @@ export const onRequestOptions: PagesFunction = async () => {
       'Access-Control-Allow-Headers': 'Content-Type',
     }
   });
-};
+}

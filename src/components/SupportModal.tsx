@@ -1,22 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Heart, DollarSign, ShoppingBag, Copy, Check, Share2, Facebook, Mail, Instagram, MessageCircle, Users } from 'lucide-react';
 
 interface SupportModalProps {
   isOpen: boolean;
   onClose: () => void;
-}
-
-declare global {
-  interface Window {
-    turnstile: {
-      render: (element: string | HTMLElement, options: {
-        sitekey: string;
-        callback: (token: string) => void;
-      }) => string;
-      reset: (widgetId: string) => void;
-    };
-  }
 }
 
 export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
@@ -27,20 +15,6 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
     message: ''
   });
   const [formStatus, setFormStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
-  const [turnstileToken, setTurnstileToken] = useState<string>('');
-  const turnstileRef = useRef<HTMLDivElement>(null);
-  const widgetIdRef = useRef<string>('');
-
-  useEffect(() => {
-    if (isOpen && turnstileRef.current && window.turnstile) {
-      widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
-        sitekey: '0x4AAAAAAB5vVKg7Y7twKuIb',
-        callback: (token: string) => {
-          setTurnstileToken(token);
-        },
-      });
-    }
-  }, [isOpen]);
 
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -57,14 +31,6 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Temporarily disabled for testing
-    // if (!turnstileToken) {
-    //   setFormStatus('error');
-    //   setTimeout(() => setFormStatus('idle'), 5000);
-    //   return;
-    // }
-
     setFormStatus('sending');
 
     try {
@@ -73,32 +39,22 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          'cf-turnstile-response': turnstileToken,
-        }),
+        body: JSON.stringify(formData),
       });
 
       if (response.ok) {
         setFormStatus('success');
         setFormData({ name: '', email: '', message: '' });
-        setTurnstileToken('');
-        if (widgetIdRef.current && window.turnstile) {
-          window.turnstile.reset(widgetIdRef.current);
-        }
         setTimeout(() => setFormStatus('idle'), 5000);
       } else {
+        const errorData = await response.json();
+        console.error('Form submission error:', errorData);
         setFormStatus('error');
-        if (widgetIdRef.current && window.turnstile) {
-          window.turnstile.reset(widgetIdRef.current);
-        }
         setTimeout(() => setFormStatus('idle'), 5000);
       }
     } catch (error) {
+      console.error('Form submission error:', error);
       setFormStatus('error');
-      if (widgetIdRef.current && window.turnstile) {
-        window.turnstile.reset(widgetIdRef.current);
-      }
       setTimeout(() => setFormStatus('idle'), 5000);
     }
   };
@@ -287,10 +243,6 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mission-500 focus:border-mission-500 outline-none transition-colors resize-none"
                       placeholder="How can we connect? Are you interested in prayer partnership, financial support, or just want to learn more?"
                     />
-                  </div>
-
-                  <div className="flex justify-center">
-                    <div ref={turnstileRef}></div>
                   </div>
 
                   <button

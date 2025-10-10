@@ -23,12 +23,48 @@ export default {
     try {
       // Parse the form data
       const data = await request.json();
-      const { name, email, message } = data;
+      const { name, email, message, 'cf-turnstile-response': turnstileToken } = data;
 
       // Basic validation
       if (!name || !email || !message) {
         return new Response(
           JSON.stringify({ error: 'Missing required fields' }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
+      // Verify Turnstile token
+      if (!turnstileToken) {
+        return new Response(
+          JSON.stringify({ error: 'Captcha verification required' }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
+      const turnstileVerifyUrl = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+      const turnstileResponse = await fetch(turnstileVerifyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          secret: env.TURNSTILE_SECRET_KEY,
+          response: turnstileToken,
+          remoteip: request.headers.get('CF-Connecting-IP'),
+        }),
+      });
+
+      const turnstileResult = await turnstileResponse.json();
+      if (!turnstileResult.success) {
+        console.error('Turnstile verification failed:', turnstileResult);
+        return new Response(
+          JSON.stringify({ error: 'Captcha verification failed' }),
           {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }

@@ -14,6 +14,7 @@ id = "454fe16d9d694ce09986680200215b77"
 # Environment variables
 [vars]
 YOUR_EMAIL = "contact@calledandsent.me"
+TURNSTILE_SECRET_KEY = "0x4AAAAAAB5vVPaRWYMpL8zLGjuhw7IEhIk"
 
 # Routes - configure this after deploying
 # This Worker will handle requests to /api/contact

@@ -11,6 +11,14 @@ interface Env {
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
 
+  console.log('Contact form function called');
+  console.log('Env bindings check:', {
+    hasDB: !!env.DB,
+    hasKV: !!env.CONTACT_FORM_KV,
+    hasTurnstile: !!env.TURNSTILE_SECRET_KEY,
+    hasNtfy: !!env.NTFY_TOPIC
+  });
+
   // CORS headers
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -20,6 +28,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   try {
     // Parse the form data
+    console.log('Parsing form data...');
     const data = await request.json() as {
       name: string;
       email: string;
@@ -127,13 +136,18 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     });
 
     // Store in D1 database
+    console.log('Attempting to store in D1...');
     const userAgent = request.headers.get('User-Agent') || 'unknown';
 
-    await env.DB.prepare(
-      'INSERT INTO submissions (name, email, message, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)'
-    ).bind(name, email, message, ip, userAgent).run();
-
-    console.log('Contact form submission stored:', { name, email });
+    try {
+      await env.DB.prepare(
+        'INSERT INTO submissions (name, email, message, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)'
+      ).bind(name, email, message, ip, userAgent).run();
+      console.log('Contact form submission stored successfully:', { name, email });
+    } catch (dbError) {
+      console.error('D1 insert error:', dbError);
+      throw dbError;
+    }
 
     // Send minimal notification to ntfy.sh (no personal data)
     if (env.NTFY_TOPIC) {

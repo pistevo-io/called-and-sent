@@ -31,6 +31,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     console.log('- CONTACT_FORM_KV available:', !!env.CONTACT_FORM_KV);
     console.log('- NTFY_TOPIC available:', !!env.NTFY_TOPIC);
     console.log('- NTFY_TOPIC value:', env.NTFY_TOPIC ? `"${env.NTFY_TOPIC}"` : 'NOT SET');
+    console.log('- TURNSTILE_SECRET_KEY available:', !!env.TURNSTILE_SECRET_KEY);
 
     // Parse request data
     let data: ContactFormData;
@@ -51,7 +52,60 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       );
     }
 
-    const { name, email, message } = data;
+    const { name, email, message, 'cf-turnstile-response': turnstileToken } = data;
+
+    // Verify Turnstile token
+    if (env.TURNSTILE_SECRET_KEY) {
+      console.log('Verifying Turnstile token...');
+      if (!turnstileToken) {
+        console.warn('Turnstile token missing in request');
+        return new Response(
+          JSON.stringify({ error: 'Security verification required' }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      try {
+        const turnstileResponse = await fetch(
+          'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              secret: env.TURNSTILE_SECRET_KEY,
+              response: turnstileToken,
+            }),
+          }
+        );
+
+        const turnstileResult = await turnstileResponse.json();
+        console.log('- Turnstile verification result:', turnstileResult.success);
+
+        if (!turnstileResult.success) {
+          console.error('Turnstile verification failed:', turnstileResult);
+          return new Response(
+            JSON.stringify({ error: 'Security verification failed. Please try again.' }),
+            {
+              status: 403,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        }
+
+        console.log('- Turnstile verification passed');
+      } catch (turnstileError: any) {
+        console.error('Turnstile verification error:', turnstileError);
+        console.error('- Error message:', turnstileError.message);
+        // Continue execution - don't fail if Turnstile service is down
+      }
+    } else {
+      console.warn('TURNSTILE_SECRET_KEY not set - skipping captcha verification');
+    }
 
     // Validate required fields
     if (!name || !email || !message) {
@@ -177,7 +231,8 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
         debug: {
           db_stored: !!env.DB,
           notification_sent: !!env.NTFY_TOPIC,
-          rate_limit_applied: !!env.CONTACT_FORM_KV
+          rate_limit_applied: !!env.CONTACT_FORM_KV,
+          turnstile_verified: !!env.TURNSTILE_SECRET_KEY
         }
       }),
       {

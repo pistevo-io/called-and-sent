@@ -1,10 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Heart, DollarSign, ShoppingBag, Copy, Check, Share2, Facebook, Mail, Instagram, MessageCircle, Users } from 'lucide-react';
 
 interface SupportModalProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+declare global {
+  interface Window {
+    turnstile: {
+      render: (element: string | HTMLElement, options: {
+        sitekey: string;
+        callback: (token: string) => void;
+      }) => string;
+      reset: (widgetId: string) => void;
+    };
+  }
 }
 
 export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
@@ -17,6 +29,22 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
   const [formStatus, setFormStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string>('');
+  const turnstileRef = useRef<HTMLDivElement>(null);
+  const widgetIdRef = useRef<string>('');
+
+  useEffect(() => {
+    if (isOpen && turnstileRef.current && window.turnstile && !widgetIdRef.current) {
+      console.log('Rendering Turnstile widget...');
+      widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
+        sitekey: '0x4AAAAAAB5vVKg7Y7twKuIb',
+        callback: (token: string) => {
+          console.log('Turnstile token received');
+          setTurnstileToken(token);
+        },
+      });
+    }
+  }, [isOpen]);
 
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -33,11 +61,24 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!turnstileToken) {
+      console.warn('Turnstile token not available');
+      setFormStatus('error');
+      setErrorMessage('Please complete the security check');
+      setTimeout(() => {
+        setFormStatus('idle');
+        setErrorMessage('');
+      }, 5000);
+      return;
+    }
+
     setFormStatus('sending');
     setErrorMessage('');
     setDebugInfo(null);
 
     console.log('Submitting contact form...');
+    console.log('Turnstile token present:', !!turnstileToken);
 
     try {
       const response = await fetch('/api/contact', {
@@ -45,7 +86,10 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          'cf-turnstile-response': turnstileToken,
+        }),
       });
 
       const responseData = await response.json();
@@ -56,6 +100,10 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
         setFormStatus('success');
         setDebugInfo(responseData.debug);
         setFormData({ name: '', email: '', message: '' });
+        setTurnstileToken('');
+        if (widgetIdRef.current && window.turnstile) {
+          window.turnstile.reset(widgetIdRef.current);
+        }
         setTimeout(() => {
           setFormStatus('idle');
           setDebugInfo(null);
@@ -65,6 +113,10 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
         setFormStatus('error');
         setErrorMessage(responseData.error || 'Unknown error');
         setDebugInfo(responseData);
+        if (widgetIdRef.current && window.turnstile) {
+          window.turnstile.reset(widgetIdRef.current);
+        }
+        setTurnstileToken('');
         setTimeout(() => {
           setFormStatus('idle');
           setErrorMessage('');
@@ -75,6 +127,10 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
       console.error('Form submission error:', error);
       setFormStatus('error');
       setErrorMessage(error instanceof Error ? error.message : 'Network error');
+      if (widgetIdRef.current && window.turnstile) {
+        window.turnstile.reset(widgetIdRef.current);
+      }
+      setTurnstileToken('');
       setTimeout(() => {
         setFormStatus('idle');
         setErrorMessage('');
@@ -268,9 +324,13 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                     />
                   </div>
 
+                  <div className="flex justify-center">
+                    <div ref={turnstileRef}></div>
+                  </div>
+
                   <button
                     type="submit"
-                    disabled={formStatus === 'sending'}
+                    disabled={formStatus === 'sending' || !turnstileToken}
                     className="w-full bg-mission-600 hover:bg-mission-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
                   >
                     {formStatus === 'sending' && (

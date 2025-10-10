@@ -67,7 +67,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
     setFormStatus('sending');
 
     try {
-      const response = await fetch('https://called-and-sent-contact-form.online-752.workers.dev', {
+      const response = await fetch('/api/contact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

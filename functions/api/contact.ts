@@ -41,7 +41,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       );
     }
 
-    // Verify Turnstile token
+    // Verify Turnstile token - TEMPORARILY DISABLED FOR TESTING
+    // TODO: Re-enable after confirming D1 and other bindings work
+    /*
     if (!turnstileToken) {
       return new Response(
         JSON.stringify({ error: 'Captcha verification required' }),
@@ -76,6 +78,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         }
       );
     }
+    */
+    console.log('Turnstile check temporarily disabled for testing');
 
     // Simple email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

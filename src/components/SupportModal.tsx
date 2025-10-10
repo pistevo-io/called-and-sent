@@ -15,6 +15,8 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
     message: ''
   });
   const [formStatus, setFormStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [debugInfo, setDebugInfo] = useState<any>(null);
 
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -32,6 +34,10 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormStatus('sending');
+    setErrorMessage('');
+    setDebugInfo(null);
+
+    console.log('Submitting contact form...');
 
     try {
       const response = await fetch('/api/contact', {
@@ -42,20 +48,37 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
         body: JSON.stringify(formData),
       });
 
+      const responseData = await response.json();
+      console.log('Response status:', response.status);
+      console.log('Response data:', responseData);
+
       if (response.ok) {
         setFormStatus('success');
+        setDebugInfo(responseData.debug);
         setFormData({ name: '', email: '', message: '' });
-        setTimeout(() => setFormStatus('idle'), 5000);
+        setTimeout(() => {
+          setFormStatus('idle');
+          setDebugInfo(null);
+        }, 10000);
       } else {
-        const errorData = await response.json();
-        console.error('Form submission error:', errorData);
+        console.error('Form submission error:', responseData);
         setFormStatus('error');
-        setTimeout(() => setFormStatus('idle'), 5000);
+        setErrorMessage(responseData.error || 'Unknown error');
+        setDebugInfo(responseData);
+        setTimeout(() => {
+          setFormStatus('idle');
+          setErrorMessage('');
+          setDebugInfo(null);
+        }, 10000);
       }
     } catch (error) {
       console.error('Form submission error:', error);
       setFormStatus('error');
-      setTimeout(() => setFormStatus('idle'), 5000);
+      setErrorMessage(error instanceof Error ? error.message : 'Network error');
+      setTimeout(() => {
+        setFormStatus('idle');
+        setErrorMessage('');
+      }, 10000);
     }
   };
 
@@ -258,13 +281,28 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
 
                   {formStatus === 'success' && (
                     <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
-                      ✓ Message sent! I'll get back to you soon.
+                      <div className="font-semibold mb-1">✓ Message sent successfully!</div>
+                      <div className="text-xs">I'll get back to you soon.</div>
+                      {debugInfo && (
+                        <div className="mt-2 pt-2 border-t border-green-300 text-xs font-mono">
+                          <div>Database: {debugInfo.db_stored ? '✓ Stored' : '✗ Not stored'}</div>
+                          <div>Notification: {debugInfo.notification_sent ? '✓ Sent' : '✗ Not sent'}</div>
+                          <div>Rate limit: {debugInfo.rate_limit_applied ? '✓ Active' : '✗ Disabled'}</div>
+                        </div>
+                      )}
                     </div>
                   )}
 
                   {formStatus === 'error' && (
                     <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
-                      ✗ Something went wrong. Please try again.
+                      <div className="font-semibold mb-1">✗ Something went wrong</div>
+                      {errorMessage && <div className="text-xs mb-2">{errorMessage}</div>}
+                      <div className="text-xs">Please try again or check the browser console for details.</div>
+                      {debugInfo && (
+                        <div className="mt-2 pt-2 border-t border-red-300 text-xs font-mono">
+                          <div>Debug info: {JSON.stringify(debugInfo, null, 2)}</div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </form>

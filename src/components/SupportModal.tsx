@@ -304,7 +304,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                       required
                       rows={4}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mission-500 focus:border-mission-500 outline-none transition-colors resize-none"
-                      placeholder="How can we connect? Are you interested in prayer partnership, financial support, or just want to learn more?"
+                      placeholder="How can we connect? Are you interested in prayer partnership, financial support, or learning more about my mission work?"
                     />
                   </div>
 
@@ -339,10 +339,31 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                 </form>
               </div>
 
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-6 mb-6">
+                <div className="flex items-center justify-center gap-3 mb-3">
+                  <Instagram className="w-8 h-8 text-purple-600" />
+                  <div className="text-center">
+                    <h4 className="font-bold text-gray-900 text-lg">Follow for Updates</h4>
+                  </div>
+                </div>
+                <p className="text-gray-700 text-center mb-4">
+                  Get real-time mission stories, prayer requests, and updates from the field.
+                </p>
+                <a
+                  href="https://instagram.com/calledandsent.me"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-3 rounded-lg font-semibold transition-all transform hover:scale-105 shadow-lg"
+                >
+                  <Instagram className="w-5 h-5" />
+                  Follow @calledandsent.me
+                </a>
+              </div>
+
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <span className="text-sm text-gray-600 flex items-center gap-1">
                   <Share2 className="w-4 h-4" />
-                  Share:
+                  Share This Page:
                 </span>
                 <button
                   onClick={() => handleShare('whatsapp')}
@@ -408,10 +429,10 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                   Financial Partnership
                 </h3>
                 <p className="text-gray-700 mb-4 max-w-2xl mx-auto">
-                  If God leads you to give financially toward mission trip costs, please use the contact form above and I'll share giving options with you personally.
+                  If God is leading you to give financially toward mission trip costs, please use the contact form above, and I'll share giving options with you personally.
                 </p>
                 <p className="text-sm text-gray-600">
-                  This allows me to share the best option for your situation and discuss tax-deductible giving through my church or ministry partner.
+                  This allows me to share the best option for your situation and discuss tax-deductible giving through my church or ministry partners.
                 </p>
               </div>
             </motion.div>

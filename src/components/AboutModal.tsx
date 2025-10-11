@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Heart, Globe, MapPin } from 'lucide-react';
+import { X, Heart, Globe, MapPin, Instagram } from 'lucide-react';
 
 interface AboutModalProps {
   isOpen: boolean;
@@ -59,10 +59,10 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
                 My Calling
               </h3>
               <p className="text-gray-700 leading-relaxed mb-4">
-                My calling to missions was planted early. Growing up, my parents showed me what generous love looks like. Every Sunday after church, my mom would prepare meal packages for about 10 homeless people in our rural area in India, and my dad and I would deliver them by motorcycle. As a child traveling miles on that bike to carry water pots for our own family, I learned dependence on God's provision. Today, I witness His faithfulness - serving on water trucks in Honduras, once a receiver, now a giver.
+                My calling to missions was planted early. Growing up, my parents showed me what generous love looks like. Every Sunday after church, my mom would prepare meal packages for about 10 homeless people in our area of rural India, and my dad and I would deliver them by motorcycle. As a child, I traveled miles on that bike to carry water pots for our own family, learning dependence on God's provision. Today, I witness His faithfulness - serving on water trucks in Honduras, once a receiver, now a giver.
               </p>
               <p className="text-gray-700 leading-relaxed mb-4">
-                During college, I started a non-profit feeding children, and it satisfied my soul deeply. But I didn't yet understand I could share the Gospel alongside meeting physical needs. That changed when I heard the true Gospel of grace at Edmond First Baptist Church in Oklahoma - salvation is a gift through faith in Jesus alone, not by works (Ephesians 2:8-9). This revelation transformed everything.
+                During college, I started a non-profit feeding children, and it satisfied my soul deeply. But I didn't yet understand that I could share the Gospel alongside meeting physical needs. That changed when I heard the true Gospel of grace at Edmond First Baptist Church in Oklahoma - salvation is a gift through faith in Jesus alone, not by works (Ephesians 2:8-9). This revelation transformed everything.
               </p>
               <p className="text-gray-700 leading-relaxed mb-4">
                 Late in 2024, I asked my mom at dinner, "Why would God let you into Heaven?" Her answer revealed she was trusting in works, not grace. I had to lovingly correct her, pointing to Scripture. I had a similar conversation with my dad in early 2025, and with my best friend. That's when it became clear: <strong>I cannot assume everyone knows the true Gospel, even those who grew up in church.</strong>
@@ -155,6 +155,20 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
                   <MapPin className="w-5 h-5 text-mission-600 mt-0.5" />
                   <div>
                     Oklahoma, USA
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Instagram className="w-5 h-5 text-mission-600 mt-0.5" />
+                  <div>
+                    <a
+                      href="https://instagram.com/calledandsent.me"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-mission-600 hover:text-mission-700 font-semibold hover:underline transition-colors"
+                    >
+                      @calledandsent.me
+                    </a>
+                    <p className="text-sm text-gray-600">Follow for mission updates and stories</p>
                   </div>
                 </div>
                 <p className="text-sm text-gray-600 mt-4">

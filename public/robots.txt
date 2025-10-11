@@ -2,6 +2,8 @@ User-agent: *
 Allow: /
 
 # Prevent profile images from being indexed
-User-agent: *
 Disallow: /profile.jpeg
 Disallow: /mine.png
+
+# Sitemap location
+Sitemap: https://calledandsent.me/sitemap.xml

@@ -4,6 +4,7 @@ import TripModal from './components/TripModal';
 import AboutModal from './components/AboutModal';
 import SupportModal from './components/SupportModal';
 import Dashboard from './components/Dashboard';
+import Footer from './components/Footer';
 import { missionTrips } from './data/missionTrips';
 import type { MissionTrip } from './types/MissionTrip';
 
@@ -83,6 +84,8 @@ function App() {
           <span className="font-semibold hidden group-hover:inline-block transition-all duration-300">Partner With Me</span>
         </div>
       </button>
+
+      <Footer />
 
       <TripModal trip={selectedTrip} onClose={handleCloseModal} />
       <AboutModal isOpen={isAboutOpen} onClose={handleCloseAbout} />

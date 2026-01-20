@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Heart } from 'lucide-react';
 import TripModal from './components/TripModal';
 import AboutModal from './components/AboutModal';
@@ -11,6 +11,19 @@ function App() {
   const [selectedTrip, setSelectedTrip] = useState<MissionTrip | null>(null);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
+
+  useEffect(() => {
+    const checkHash = () => {
+      if (window.location.hash === '#about') {
+        setIsAboutOpen(true);
+      }
+    };
+
+    checkHash();
+    window.addEventListener('hashchange', checkHash);
+
+    return () => window.removeEventListener('hashchange', checkHash);
+  }, []);
 
   const handleTripSelect = (trip: MissionTrip) => {
     setSelectedTrip(trip);

@@ -39,7 +39,7 @@ export default function TripModal({ trip, onClose }: TripModalProps) {
           onClick={(e) => e.stopPropagation()}
         >
           <div className="relative">
-            <div className="relative h-96 bg-gray-900">
+            <div className="relative h-72 sm:h-96 bg-gray-900">
               <motion.img
                 key={currentImageIndex}
                 initial={{ opacity: 0 }}
@@ -54,7 +54,7 @@ export default function TripModal({ trip, onClose }: TripModalProps) {
               <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
 
               <div className="absolute bottom-6 left-6 text-white">
-                <h2 className="text-4xl font-bold mb-2">{trip.title}</h2>
+                <h2 className="text-2xl sm:text-4xl font-bold mb-2">{trip.title}</h2>
                 <div className="flex items-center gap-2 text-lg">
                   <MapPin className="w-5 h-5" />
                   <span>{trip.location}, {trip.country}</span>
@@ -90,8 +90,8 @@ export default function TripModal({ trip, onClose }: TripModalProps) {
             </button>
           </div>
 
-          <div className="p-8 overflow-y-auto max-h-[500px]">
-            <div className="grid grid-cols-3 gap-4 mb-8 pb-6 border-b border-gray-200">
+          <div className="p-4 sm:p-6 lg:p-8 overflow-y-auto max-h-[60vh] sm:max-h-[500px]">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8 pb-6 border-b border-gray-200">
               <div className="flex items-center gap-2 text-gray-600">
                 <Calendar className="w-5 h-5 text-mission-600" />
                 <div>

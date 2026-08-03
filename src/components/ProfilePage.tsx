@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Heart } from 'lucide-react';
+import { authClient } from '../auth';
 import TripModal from './TripModal';
 import AboutModal from './AboutModal';
 import SupportModal from './SupportModal';
@@ -9,9 +11,11 @@ import { missionTrips } from '../data/missionTrips';
 import type { MissionTrip } from '../types/MissionTrip';
 
 export default function ProfilePage() {
+  const navigate = useNavigate();
   const [selectedTrip, setSelectedTrip] = useState<MissionTrip | null>(null);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     const checkHash = () => {
@@ -19,36 +23,37 @@ export default function ProfilePage() {
         setIsAboutOpen(true);
       }
     };
-
     checkHash();
     window.addEventListener('hashchange', checkHash);
-
     return () => window.removeEventListener('hashchange', checkHash);
   }, []);
 
-  const handleTripSelect = (trip: MissionTrip) => {
-    setSelectedTrip(trip);
-  };
+  useEffect(() => {
+    authClient.getSession().then(({ data }) => {
+      if (!data?.session) {
+        navigate('/login');
+      } else {
+        setChecking(false);
+      }
+    }).catch(() => {
+      navigate('/login');
+    });
+  }, [navigate]);
 
-  const handleCloseModal = () => {
-    setSelectedTrip(null);
-  };
+  if (checking) {
+    return (
+      <div className="h-screen bg-gray-900 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-mission-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
-  const handleOpenAbout = () => {
-    setIsAboutOpen(true);
-  };
-
-  const handleCloseAbout = () => {
-    setIsAboutOpen(false);
-  };
-
-  const handleOpenSupport = () => {
-    setIsSupportOpen(true);
-  };
-
-  const handleCloseSupport = () => {
-    setIsSupportOpen(false);
-  };
+  const handleTripSelect = (trip: MissionTrip) => setSelectedTrip(trip);
+  const handleCloseModal = () => setSelectedTrip(null);
+  const handleOpenAbout = () => setIsAboutOpen(true);
+  const handleCloseAbout = () => setIsAboutOpen(false);
+  const handleOpenSupport = () => setIsSupportOpen(true);
+  const handleCloseSupport = () => setIsSupportOpen(false);
 
   return (
     <div className="h-screen flex flex-col bg-gray-900">

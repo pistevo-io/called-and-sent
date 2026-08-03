@@ -1,9 +1,36 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { authClient } from '../auth';
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const { error } = await authClient.signUp.email({
+        email,
+        password,
+        name,
+      });
+      if (error) {
+        setError(error.message || 'Could not create account');
+      }
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
@@ -19,18 +46,17 @@ export default function SignupPage() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md relative z-10"
       >
-        {/* Logo */}
         <div className="text-center mb-8">
           <a href="/" className="inline-block">
-            <img src="/logo.svg" alt="Called & Sent" className="w-14 h-14 mx-auto mb-4" />
+            <h1 className="text-4xl font-bold tracking-tight text-white">
+              Called <span className="text-mission-500">&amp;</span> Sent
+            </h1>
           </a>
-          <h1 className="text-3xl font-bold text-white">Create your account</h1>
-          <p className="text-gray-400 mt-2">Start sharing your mission journey</p>
+          <p className="text-gray-400 mt-2">Create your account</p>
         </div>
 
-        {/* Signup Card */}
         <div className="bg-gray-800 border border-gray-700 rounded-2xl p-8 shadow-xl">
-          <form className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1.5">
                 Full name
@@ -40,28 +66,13 @@ export default function SignupPage() {
                 <input
                   type="text"
                   id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   placeholder="John Missionary"
+                  required
                   className="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-mission-500 transition-colors"
                 />
               </div>
-            </div>
-
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-1.5">
-                Username
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">@</span>
-                <input
-                  type="text"
-                  id="username"
-                  placeholder="yourname"
-                  className="w-full pl-8 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-mission-500 transition-colors"
-                />
-              </div>
-              <p className="text-gray-600 text-xs mt-1.5">
-                Your profile will be at calledandsent.me/@yourname
-              </p>
             </div>
 
             <div>
@@ -73,7 +84,10 @@ export default function SignupPage() {
                 <input
                   type="email"
                   id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
+                  required
                   className="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-mission-500 transition-colors"
                 />
               </div>
@@ -88,7 +102,11 @@ export default function SignupPage() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="Min. 8 characters"
+                  required
+                  minLength={8}
                   className="w-full pl-10 pr-12 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-mission-500 transition-colors"
                 />
                 <button
@@ -101,8 +119,14 @@ export default function SignupPage() {
               </div>
             </div>
 
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
             <label className="flex items-start gap-2 text-sm text-gray-400">
-              <input type="checkbox" className="mt-0.5 rounded border-gray-600 bg-gray-900 text-mission-600 focus:ring-mission-500" />
+              <input type="checkbox" required className="mt-0.5 rounded border-gray-600 bg-gray-900 text-mission-600 focus:ring-mission-500" />
               <span>
                 I agree to the{' '}
                 <a href="/terms" className="text-mission-400 hover:text-mission-300">Terms</a>
@@ -113,9 +137,10 @@ export default function SignupPage() {
 
             <button
               type="submit"
-              className="w-full bg-mission-600 hover:bg-mission-700 text-white py-3 rounded-lg font-semibold transition-colors"
+              disabled={loading}
+              className="w-full bg-mission-600 hover:bg-mission-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-lg font-semibold transition-colors"
             >
-              Create Account
+              {loading ? 'Creating account...' : 'Create Account'}
             </button>
           </form>
         </div>
@@ -129,7 +154,7 @@ export default function SignupPage() {
 
         <p className="text-center mt-6">
           <a href="/" className="text-gray-500 hover:text-gray-400 text-sm transition-colors">
-            ← Back to Called & Sent
+            ← Back to Called &amp; Sent
           </a>
         </p>
       </motion.div>

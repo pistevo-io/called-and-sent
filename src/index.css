@@ -4,9 +4,52 @@
 
 @layer base {
   body {
-    @apply bg-faith-cream text-gray-900;
+    @apply bg-gray-900 text-white;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
+}
+
+/* Override Better Auth UI to dark theme */
+:root {
+  --ba-primary: #0284c7;
+  --ba-primary-foreground: #ffffff;
+  --ba-background: #1f2937;
+  --ba-foreground: #ffffff;
+  --ba-muted: #374151;
+  --ba-muted-foreground: #9ca3af;
+  --ba-border: #374151;
+  --ba-input: #111827;
+  --ba-ring: #0284c7;
+  --ba-radius: 0.75rem;
+}
+
+/* Auth UI dark overrides */
+[data-better-auth-ui] {
+  color-scheme: dark;
+}
+
+[data-better-auth-ui] input {
+  background-color: #111827 !important;
+  border-color: #374151 !important;
+  color: #ffffff !important;
+}
+
+[data-better-auth-ui] input:focus {
+  border-color: #0284c7 !important;
+  ring-color: #0284c7 !important;
+}
+
+[data-better-auth-ui] button[type="submit"] {
+  background-color: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+[data-better-auth-ui] button[type="submit"]:hover {
+  background-color: #0369a1 !important;
+}
+
+[data-better-auth-ui] a {
+  color: #38bdf8 !important;
 }
 
 @layer utilities {

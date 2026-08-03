@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+  </defs>
+  <!-- Heart within a circle — love + mission -->
+  <g transform="translate(36, 50)">
+    <circle cx="0" cy="0" r="24" fill="none" stroke="url(#g)" stroke-width="2.2"/>
+    <path d="M0,10 C-14,-4 -14,-14 -6,-18 C-2,-20 0,-16 0,-16 C0,-16 2,-20 6,-18 C14,-14 14,-4 0,10Z"
+      fill="url(#g)"/>
+  </g>
+  <text x="80" y="58" font-family="'Inter', 'Segoe UI', system-ui, sans-serif" font-weight="700" font-size="34" fill="#ffffff">
+    Called <tspan fill="#0ea5e9">&amp;</tspan> Sent
+  </text>
+</svg>

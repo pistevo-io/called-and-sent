@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+  </defs>
+  <!-- Pure wordmark — no icon, "Called" in bold white, "& Sent" in gradient blue, elegant ampersand -->
+  <text x="40" y="58" font-family="'Inter', 'Segoe UI', system-ui, sans-serif" font-weight="800" font-size="38" fill="#ffffff" letter-spacing="-1">
+    Called
+  </text>
+  <text x="192" y="58" font-family="'Inter', 'Segoe UI', system-ui, sans-serif" font-weight="300" font-size="38" fill="#0ea5e9">
+    &amp;
+  </text>
+  <text x="225" y="58" font-family="'Inter', 'Segoe UI', system-ui, sans-serif" font-weight="800" font-size="38" fill="url(#g)" letter-spacing="-1">
+    Sent
+  </text>
+</svg>

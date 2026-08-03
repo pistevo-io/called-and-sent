@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100">
+  <text x="40" y="64" font-family="'Inter', 'Segoe UI', system-ui, sans-serif" font-weight="800" font-size="42" fill="#ffffff" letter-spacing="-2">
+    CALLED
+  </text>
+  <text x="234" y="62" font-family="'Inter', 'Segoe UI', system-ui, sans-serif" font-weight="400" font-size="36" fill="#0ea5e9">
+    &amp;
+  </text>
+  <text x="262" y="64" font-family="'Inter', 'Segoe UI', system-ui, sans-serif" font-weight="800" font-size="42" fill="#ffffff" letter-spacing="-2">
+    SENT
+  </text>
+</svg>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+  </defs>
+  <!-- Open hands cupped upward -->
+  <g transform="translate(36, 50)" fill="none" stroke="url(#g)" stroke-width="2.5" stroke-linecap="round">
+    <!-- Left hand -->
+    <path d="M-24,-8 C-26,-18 -18,-24 -12,-18"/>
+    <path d="M-12,-18 C-8,-26 -2,-24 -4,-16"/>
+    <!-- Right hand -->
+    <path d="M24,-8 C26,-18 18,-24 12,-18"/>
+    <path d="M12,-18 C8,-26 2,-24 4,-16"/>
+    <!-- Base of hands meeting -->
+    <path d="M-8,2 C-4,6 4,6 8,2" stroke-width="1.5" opacity="0.5"/>
+  </g>
+  <text x="80" y="58" font-family="'Inter', 'Segoe UI', system-ui, sans-serif" font-weight="700" font-size="34" fill="#ffffff">
+    Called <tspan fill="#0ea5e9">&amp;</tspan> Sent
+  </text>
+</svg>

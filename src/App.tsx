@@ -1,12 +1,12 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import LandingPage from './components/LandingPage';
-import LoginPage from './components/LoginPage';
-import SignupPage from './components/SignupPage';
-import PrivacyPolicy from './components/PrivacyPolicy';
-import TermsOfService from './components/TermsOfService';
+import LandingPage from './features/landing/LandingPage';
+import ProfileRouter from './features/profile/ProfileRouter';
+import LoginPage from './features/auth/LoginPage';
+import SignupPage from './features/auth/SignupPage';
+import PrivacyPolicy from './features/legal/PrivacyPolicy';
+import TermsOfService from './features/legal/TermsOfService';
 import FontPreview from './components/FontPreview';
 import BrandExplorer from './components/BrandExplorer';
-import ProfileRouter from './components/ProfileRouter';
 
 export default function App() {
   return (

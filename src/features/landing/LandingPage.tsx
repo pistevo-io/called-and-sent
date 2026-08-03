@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Globe, Users, Heart, MapPin, ArrowRight } from 'lucide-react';
-import Footer from './Footer';
+import Footer from '../../shared/ui/Footer';
 
 export default function LandingPage() {
   return (

@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { NeonAuthUIProvider } from '@neondatabase/auth-ui'
 import '@neondatabase/auth-ui/css'
-import { authClient } from './auth'
+import { authClient } from './features/auth/auth'
 import './index.css'
 import App from './App.tsx'
 

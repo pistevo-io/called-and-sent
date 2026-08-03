@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart } from 'lucide-react';
-import { authClient } from '../auth';
+import { authClient } from '../auth/auth';
 import TripModal from './TripModal';
 import AboutModal from './AboutModal';
 import SupportModal from './SupportModal';
 import Dashboard from './Dashboard';
-import Footer from './Footer';
-import { missionTrips } from '../data/missionTrips';
-import type { MissionTrip } from '../types/MissionTrip';
+import Footer from '../../shared/ui/Footer';
+import { missionTrips } from '../../shared/data/missionTrips';
+import type { MissionTrip } from '../../shared/types/MissionTrip';
 
 export default function ProfilePage() {
   const navigate = useNavigate();

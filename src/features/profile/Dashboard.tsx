@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Globe, Users, Heart, Calendar, MapPin, Search, X, ArrowUpDown } from 'lucide-react';
-import type { MissionTrip } from '../types/MissionTrip';
-import { useCountUp } from '../hooks/useCountUp';
+import type { MissionTrip } from '../../shared/types/MissionTrip';
+import { useCountUp } from '../../shared/hooks/useCountUp';
 import SkeletonCard from './SkeletonCard';
 
 interface DashboardProps {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, MapPin, Calendar, Clock, Users, Heart } from 'lucide-react';
-import type { MissionTrip } from '../types/MissionTrip';
+import type { MissionTrip } from '../../shared/types/MissionTrip';
 
 interface TripModalProps {
   trip: MissionTrip | null;

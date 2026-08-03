@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
-import { authClient } from '../auth';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { authClient } from './auth';
 
-export default function SignupPage() {
+export default function LoginPage() {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,13 +18,11 @@ export default function SignupPage() {
     setError('');
 
     try {
-      const { error } = await authClient.signUp.email({
-        email,
-        password,
-        name,
-      });
+      const { error } = await authClient.signIn.email({ email, password });
       if (error) {
-        setError(error.message || 'Could not create account');
+        setError(error.message || 'Invalid email or password');
+      } else {
+        navigate('/@k');
       }
     } catch {
       setError('Something went wrong. Please try again.');
@@ -52,29 +51,11 @@ export default function SignupPage() {
               Called <span className="text-mission-500">&amp;</span> Sent
             </h1>
           </a>
-          <p className="text-gray-400 mt-2">Create your account</p>
+          <p className="text-gray-400 mt-2">Sign in to your account</p>
         </div>
 
         <div className="bg-gray-800 border border-gray-700 rounded-2xl p-8 shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1.5">
-                Full name
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                <input
-                  type="text"
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="John Missionary"
-                  required
-                  className="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-mission-500 transition-colors"
-                />
-              </div>
-            </div>
-
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1.5">
                 Email
@@ -104,9 +85,8 @@ export default function SignupPage() {
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Min. 8 characters"
+                  placeholder="••••••••"
                   required
-                  minLength={8}
                   className="w-full pl-10 pr-12 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-mission-500 transition-colors"
                 />
                 <button
@@ -125,30 +105,20 @@ export default function SignupPage() {
               </div>
             )}
 
-            <label className="flex items-start gap-2 text-sm text-gray-400">
-              <input type="checkbox" required className="mt-0.5 rounded border-gray-600 bg-gray-900 text-mission-600 focus:ring-mission-500" />
-              <span>
-                I agree to the{' '}
-                <a href="/terms" className="text-mission-400 hover:text-mission-300">Terms</a>
-                {' '}and{' '}
-                <a href="/privacy" className="text-mission-400 hover:text-mission-300">Privacy Policy</a>
-              </span>
-            </label>
-
             <button
               type="submit"
               disabled={loading}
               className="w-full bg-mission-600 hover:bg-mission-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-lg font-semibold transition-colors"
             >
-              {loading ? 'Creating account...' : 'Create Account'}
+              {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
         </div>
 
         <p className="text-center text-gray-400 mt-6">
-          Already have an account?{' '}
-          <a href="/login" className="text-mission-400 hover:text-mission-300 font-semibold transition-colors">
-            Sign in
+          Don't have an account?{' '}
+          <a href="/signup" className="text-mission-400 hover:text-mission-300 font-semibold transition-colors">
+            Create one
           </a>
         </p>
 

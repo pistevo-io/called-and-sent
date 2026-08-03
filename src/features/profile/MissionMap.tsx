@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Map, { Marker, NavigationControl, ScaleControl } from 'react-map-gl';
 import { MapPin } from 'lucide-react';
-import type { MissionTrip } from '../types/MissionTrip';
+import type { MissionTrip } from '../../shared/types/MissionTrip';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface MissionMapProps {

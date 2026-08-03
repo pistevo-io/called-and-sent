@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, MapPin, Calendar, Clock, Users, Heart } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, MapPin, Calendar, Clock, Users, Heart, Share2 } from 'lucide-react';
 import type { MissionTrip } from '../../shared/types/MissionTrip';
+import SocialShare from '../../shared/ui/SocialShare';
 
 interface TripModalProps {
   trip: MissionTrip | null;
@@ -143,7 +144,7 @@ export default function TripModal({ trip, onClose }: TripModalProps) {
               </ul>
             </div>
 
-            <div>
+            <div className="mb-8 pb-6 border-b border-gray-200">
               <h3 className="text-sm font-semibold text-gray-500 mb-3">Ministry Types</h3>
               <div className="flex flex-wrap gap-2">
                 {trip.ministryType.map((type, index) => (
@@ -155,6 +156,18 @@ export default function TripModal({ trip, onClose }: TripModalProps) {
                   </span>
                 ))}
               </div>
+            </div>
+
+            {/* Share Section */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500 mb-4 flex items-center gap-2">
+                <Share2 className="w-4 h-4" />
+                Share This Trip
+              </h3>
+              <SocialShare
+                title={trip.title}
+                text={`${trip.title} — ${trip.location}, ${trip.country}. ${trip.description}`}
+              />
             </div>
           </div>
         </motion.div>

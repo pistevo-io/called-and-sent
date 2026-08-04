@@ -11,7 +11,7 @@ export default function ProfileRouter() {
   }
 
   if (slug) {
-    return <ProfilePage />;
+    return <ProfilePage slug={slug} />;
   }
 
   return <Navigate to="/" replace />;

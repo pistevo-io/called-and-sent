@@ -11,7 +11,7 @@ import type { MissionTrip } from '../../shared/types/MissionTrip';
 // DashboardPage owns the single top nav (incl. auth-aware controls), so this
 // page only provides the public body + modals + footer. The outer container is
 // allowed to grow past the viewport so the trip list can scroll.
-export default function ProfilePage() {
+export default function ProfilePage({ slug }: { slug?: string }) {
   const [selectedTrip, setSelectedTrip] = useState<MissionTrip | null>(null);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
@@ -28,7 +28,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
       <main className="flex-1">
-        <DashboardPage publicView defaultTab="profile" />
+        <DashboardPage publicView defaultTab="profile" slug={slug} />
       </main>
 
       <button

@@ -93,7 +93,7 @@ function DashboardNav({ publicView }: { publicView: boolean }) {
   );
 }
 
-type Tab = 'profile' | 'trips' | 'wall' | 'settings';
+type Tab = 'profile' | 'trips' | 'wall';
 
 interface DashboardPageProps {
   /** Public, read-only view of a missionary's profile — no auth, no editing. */
@@ -445,7 +445,6 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
     { key: 'trips', icon: MapPin, label: 'My Trips' },
     { key: 'wall', icon: MessageSquare, label: 'Wall Posts' },
     { key: 'profile', icon: User, label: 'Profile' },
-    ...(publicView ? [] : [{ key: 'settings' as const, icon: Settings, label: 'Settings' }]),
   ];
 
   return (
@@ -779,43 +778,6 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
             </div>
           )}
 
-          {/* Settings Tab */}
-          {activeTab === 'settings' && !publicView && (
-            <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 sm:p-8">
-              <h2 className="text-xl font-bold mb-6">Settings</h2>
-              <div className="space-y-5 max-w-md">
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1.5">Email</label>
-                  <input
-                    type="email"
-                    defaultValue="missionary@example.com"
-                    className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-mission-500 transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1.5">Change Password</label>
-                  <input
-                    type="password"
-                    placeholder="New password"
-                    className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-mission-500 transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1.5">Theme</label>
-                  <select className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-mission-500 transition-colors">
-                    <option value="dark">Dark</option>
-                    <option value="light">Light</option>
-                  </select>
-                </div>
-                <div className="pt-4">
-                  <button className="flex items-center gap-2 bg-mission-600 hover:bg-mission-700 px-6 py-2.5 rounded-full text-sm font-semibold transition-all hover:scale-105 shadow-lg hover:shadow-mission-500/30">
-                    <Save className="w-4 h-4" />
-                    Save Settings
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </motion.div>
       </div>
     </div>

@@ -35,6 +35,9 @@ dist-ssr
 CLAUDE.md
 .worktrees/
 
+# Seed temp files
+*.seed.*.sql
+
 # Cloudflare / wrangler
 .wrangler/
 cloudflare-env.d.ts

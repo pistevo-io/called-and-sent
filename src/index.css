@@ -9,8 +9,34 @@
   }
 }
 
-/* Override Better Auth UI to dark theme */
-:root {
+/* ─── Theme tokens ───────────────────────────────────────────────
+   Settings page (and any theme-aware component) reads these vars.
+   Dark is the brand default; light overrides are scoped to
+   [data-theme="light"] so the rest of the app is unaffected.        */
+:root,
+[data-theme='dark'] {
+  --cas-bg: #111827;        /* gray-900 */
+  --cas-surface: #1f2937;   /* gray-800 */
+  --cas-surface-2: #374151; /* gray-700 */
+  --cas-border: #374151;
+  --cas-text: #ffffff;
+  --cas-text-muted: #9ca3af;
+  --cas-input-bg: #111827;
+}
+
+[data-theme='light'] {
+  --cas-bg: #f8fafc;
+  --cas-surface: #ffffff;
+  --cas-surface-2: #e2e8f0;
+  --cas-border: #e2e8f0;
+  --cas-text: #0f172a;
+  --cas-text-muted: #64748b;
+  --cas-input-bg: #ffffff;
+}
+
+/* Dark overrides for the Better Auth UI — only when the dark theme
+   is active, so a light theme lets the UI fall back to its default. */
+[data-theme='dark'] {
   --ba-primary: #0284c7;
   --ba-primary-foreground: #ffffff;
   --ba-background: #1f2937;
@@ -23,32 +49,31 @@
   --ba-radius: 0.75rem;
 }
 
-/* Auth UI dark overrides */
-[data-better-auth-ui] {
+[data-theme='dark'] [data-better-auth-ui] {
   color-scheme: dark;
 }
 
-[data-better-auth-ui] input {
+[data-theme='dark'] [data-better-auth-ui] input {
   background-color: #111827 !important;
   border-color: #374151 !important;
   color: #ffffff !important;
 }
 
-[data-better-auth-ui] input:focus {
+[data-theme='dark'] [data-better-auth-ui] input:focus {
   border-color: #0284c7 !important;
   ring-color: #0284c7 !important;
 }
 
-[data-better-auth-ui] button[type="submit"] {
+[data-theme='dark'] [data-better-auth-ui] button[type='submit'] {
   background-color: #0284c7 !important;
   color: #ffffff !important;
 }
 
-[data-better-auth-ui] button[type="submit"]:hover {
+[data-theme='dark'] [data-better-auth-ui] button[type='submit']:hover {
   background-color: #0369a1 !important;
 }
 
-[data-better-auth-ui] a {
+[data-theme='dark'] [data-better-auth-ui] a {
   color: #38bdf8 !important;
 }
 

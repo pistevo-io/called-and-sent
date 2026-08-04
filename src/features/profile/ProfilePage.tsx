@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Heart } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Heart, Settings } from 'lucide-react';
 import { authClient } from '../auth/auth';
 import TripModal from './TripModal';
 import AboutModal from './AboutModal';
@@ -74,6 +74,14 @@ export default function ProfilePage() {
                 <img src="/mine.png" alt="Profile" className="w-8 h-8 rounded-full object-cover" />
               </div>
             </button>
+            <Link
+              to="/settings"
+              className="absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+              aria-label="Settings"
+              title="Settings"
+            >
+              <Settings className="w-5 h-5" />
+            </Link>
           </div>
         </div>
       </header>

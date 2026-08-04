@@ -9,19 +9,20 @@ import TermsOfService from './features/legal/TermsOfService';
 import SettingsPage from './features/settings/SettingsPage';
 import FontPreview from './components/FontPreview';
 import BrandExplorer from './components/BrandExplorer';
+import { RequireAuth } from './features/auth/useAuthGuards';
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/dashboard" element={<RequireAuth><DashboardPage /></RequireAuth>} />
         <Route path="/:slug" element={<ProfileRouter />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
-        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
         <Route path="/dev/fonts" element={<FontPreview />} />
         <Route path="/dev/brand" element={<BrandExplorer />} />
       </Routes>

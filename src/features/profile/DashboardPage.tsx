@@ -1,26 +1,35 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   User, MapPin, Edit3, Plus, Trash2, Save, X, MessageSquare,
   Calendar, Image, Upload, Settings, Share2
 } from 'lucide-react';
-import { authClient } from '../auth/auth';
+import { useRequireAuth } from '../auth/useAuthGuards';
 import { missionTrips as seedTrips } from '../../shared/data/missionTrips';
 import type { MissionTrip } from '../../shared/types/MissionTrip';
 import SocialShare from '../../shared/ui/SocialShare';
 
 type Tab = 'profile' | 'trips' | 'wall' | 'settings';
 
+interface DashboardPageProps {
+  /** Public, read-only view of a missionary's profile — no auth, no editing. */
+  publicView?: boolean;
+  /** Tab to open initially. */
+  defaultTab?: Tab;
+}
+
 interface WallPostForm {
   title: string;
   content: string;
 }
 
-export default function DashboardPage() {
-  const navigate = useNavigate();
-  const [checking, setChecking] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>('trips');
+export default function DashboardPage({ publicView = false, defaultTab = 'trips' }: DashboardPageProps) {
+  const auth = useRequireAuth(!publicView);
+  // Owner view blocks while the session resolves or until the anon redirect fires;
+  // public view is always open.
+  const checking = !publicView && auth.state !== 'authed';
+  const [activeTab, setActiveTab] = useState<Tab>(defaultTab);
   const [trips, setTrips] = useState<MissionTrip[]>([]);
   const [wallPosts, setWallPosts] = useState<WallPostForm[]>([]);
   const [editingTrip, setEditingTrip] = useState<MissionTrip | null>(null);
@@ -30,14 +39,6 @@ export default function DashboardPage() {
   const [sharingIdx, setSharingIdx] = useState<number | null>(null);
 
   useEffect(() => {
-    authClient.getSession().then(({ data }) => {
-      if (!data?.session) {
-        navigate('/login');
-      } else {
-        setChecking(false);
-      }
-    }).catch(() => navigate('/login'));
-
     // Seed trips from shared data + any user-added localStorage trips
     const localTrips = JSON.parse(localStorage.getItem('editor_trips') || '[]') as MissionTrip[];
     const localIds = new Set(localTrips.map((t: MissionTrip) => t.id));
@@ -53,7 +54,7 @@ export default function DashboardPage() {
 
     const savedPosts = localStorage.getItem('editor_posts');
     if (savedPosts) setWallPosts(JSON.parse(savedPosts));
-  }, [navigate]);
+  }, []);
 
   const saveTrips = (updated: MissionTrip[]) => {
     setTrips(updated);
@@ -77,7 +78,7 @@ export default function DashboardPage() {
     { key: 'trips', icon: MapPin, label: 'My Trips' },
     { key: 'wall', icon: MessageSquare, label: 'Wall Posts' },
     { key: 'profile', icon: User, label: 'Profile' },
-    { key: 'settings', icon: Settings, label: 'Settings' },
+    ...(publicView ? [] : [{ key: 'settings' as const, icon: Settings, label: 'Settings' }]),
   ];
 
   return (
@@ -88,7 +89,16 @@ export default function DashboardPage() {
           <Link to="/" className="text-xl font-bold tracking-tight">
             Called <span className="text-mission-500">&</span> Sent
           </Link>
-          <span className="text-gray-400 text-sm">Dashboard</span>
+          {publicView ? (
+            <a href="/login" className="text-sm font-medium text-mission-400 hover:text-mission-300 transition-colors">
+              Sign In
+            </a>
+          ) : (
+            <Link to="/settings" className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors text-sm">
+              <Settings className="w-4 h-4" />
+              Settings
+            </Link>
+          )}
         </div>
       </nav>
 
@@ -168,13 +178,15 @@ export default function DashboardPage() {
             <div>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold">My Trips ({trips.length})</h2>
-                <button
-                  onClick={() => { setEditingTrip(null); setShowTripForm(true); }}
-                  className="flex items-center gap-2 bg-mission-600 hover:bg-mission-700 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:scale-105"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Trip
-                </button>
+                {!publicView && (
+                  <button
+                    onClick={() => { setEditingTrip(null); setShowTripForm(true); }}
+                    className="flex items-center gap-2 bg-mission-600 hover:bg-mission-700 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:scale-105"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Trip
+                  </button>
+                )}
               </div>
 
               {showTripForm && (
@@ -217,18 +229,22 @@ export default function DashboardPage() {
                       <p className="text-gray-500 text-sm mt-1 line-clamp-1">{trip.description}</p>
                     </div>
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-4">
-                      <button
-                        onClick={() => { setEditingTrip(trip); setShowTripForm(true); }}
-                        className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                      >
-                        <Edit3 className="w-4 h-4 text-gray-400" />
-                      </button>
-                      <button
-                        onClick={() => saveTrips(trips.filter((t) => t.id !== trip.id))}
-                        className="p-2 hover:bg-red-900/30 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-400" />
-                      </button>
+                      {!publicView && (
+                        <>
+                          <button
+                            onClick={() => { setEditingTrip(trip); setShowTripForm(true); }}
+                            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                          >
+                            <Edit3 className="w-4 h-4 text-gray-400" />
+                          </button>
+                          <button
+                            onClick={() => saveTrips(trips.filter((t) => t.id !== trip.id))}
+                            className="p-2 hover:bg-red-900/30 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-400" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -241,13 +257,15 @@ export default function DashboardPage() {
             <div>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold">Wall Posts ({wallPosts.length})</h2>
-                <button
-                  onClick={() => { setEditingPost(null); setShowPostForm(true); }}
-                  className="flex items-center gap-2 bg-mission-600 hover:bg-mission-700 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:scale-105"
-                >
-                  <Plus className="w-4 h-4" />
-                  New Post
-                </button>
+                {!publicView && (
+                  <button
+                    onClick={() => { setEditingPost(null); setShowPostForm(true); }}
+                    className="flex items-center gap-2 bg-mission-600 hover:bg-mission-700 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:scale-105"
+                  >
+                    <Plus className="w-4 h-4" />
+                    New Post
+                  </button>
+                )}
               </div>
 
               {showPostForm && (
@@ -285,25 +303,29 @@ export default function DashboardPage() {
                         <p className="text-gray-400 text-sm line-clamp-2">{post.content}</p>
                       </div>
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                        <button
-                          onClick={() => setSharingIdx(sharingIdx === i ? null : i)}
-                          className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                          aria-label="Share post"
-                        >
-                          <Share2 className="w-4 h-4 text-gray-400" />
-                        </button>
-                        <button
-                          onClick={() => { setEditingPost(post); setShowPostForm(true); }}
-                          className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                        >
-                          <Edit3 className="w-4 h-4 text-gray-400" />
-                        </button>
-                        <button
-                          onClick={() => savePosts(wallPosts.filter((_, j) => j !== i))}
-                          className="p-2 hover:bg-red-900/30 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4 text-red-400" />
-                        </button>
+                        {!publicView && (
+                          <>
+                            <button
+                              onClick={() => setSharingIdx(sharingIdx === i ? null : i)}
+                              className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                              aria-label="Share post"
+                            >
+                              <Share2 className="w-4 h-4 text-gray-400" />
+                            </button>
+                            <button
+                              onClick={() => { setEditingPost(post); setShowPostForm(true); }}
+                              className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                            >
+                              <Edit3 className="w-4 h-4 text-gray-400" />
+                            </button>
+                            <button
+                              onClick={() => savePosts(wallPosts.filter((_, j) => j !== i))}
+                              className="p-2 hover:bg-red-900/30 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4 text-red-400" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                     {sharingIdx === i && (
@@ -321,7 +343,7 @@ export default function DashboardPage() {
           )}
 
           {/* Settings Tab */}
-          {activeTab === 'settings' && (
+          {activeTab === 'settings' && !publicView && (
             <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 sm:p-8">
               <h2 className="text-xl font-bold mb-6">Settings</h2>
               <div className="space-y-5 max-w-md">

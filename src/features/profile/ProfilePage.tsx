@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Heart } from 'lucide-react';
-import { authClient } from '../auth/auth';
 import TripModal from './TripModal';
 import AboutModal from './AboutModal';
 import SupportModal from './SupportModal';
@@ -9,12 +7,11 @@ import DashboardPage from './DashboardPage';
 import Footer from '../../shared/ui/Footer';
 import type { MissionTrip } from '../../shared/types/MissionTrip';
 
+// Public missionary page — viewable by anyone (logged in or not).
 export default function ProfilePage() {
-  const navigate = useNavigate();
   const [selectedTrip, setSelectedTrip] = useState<MissionTrip | null>(null);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
-  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     const checkHash = () => {
@@ -24,21 +21,6 @@ export default function ProfilePage() {
     window.addEventListener('hashchange', checkHash);
     return () => window.removeEventListener('hashchange', checkHash);
   }, []);
-
-  useEffect(() => {
-    authClient.getSession().then(({ data }) => {
-      if (!data?.session) navigate('/login');
-      else setChecking(false);
-    }).catch(() => navigate('/login'));
-  }, [navigate]);
-
-  if (checking) {
-    return (
-      <div className="h-screen bg-gray-900 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-mission-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="h-screen flex flex-col bg-gray-900">
@@ -64,7 +46,7 @@ export default function ProfilePage() {
       </header>
 
       <main className="flex-1 relative overflow-hidden">
-        <DashboardPage />
+        <DashboardPage publicView defaultTab="profile" />
       </main>
 
       <button

@@ -2,8 +2,11 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { authClient } from './auth';
+import { useRedirectIfAuthed } from './useAuthGuards';
 
 export default function SignupPage() {
+  // Logged-in visitors shouldn't see the signup form; send them to ?from= or /dashboard.
+  useRedirectIfAuthed();
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

@@ -1,39 +1,18 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Save, Lock, User, Palette, Bell, ArrowLeft } from 'lucide-react';
-import { authClient } from '../auth/auth';
 
 type Section = 'profile' | 'password' | 'appearance' | 'notifications';
 
 export default function SettingsPage() {
-  const navigate = useNavigate();
-  const [checking, setChecking] = useState(true);
   const [activeSection, setActiveSection] = useState<Section>('profile');
   const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    authClient.getSession().then(({ data }) => {
-      if (!data?.session) {
-        navigate('/login');
-      } else {
-        setChecking(false);
-      }
-    }).catch(() => navigate('/login'));
-  }, [navigate]);
 
   const handleSave = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
-
-  if (checking) {
-    return (
-      <div className="h-screen bg-gray-900 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-mission-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
 
   const sections: { key: Section; icon: React.ElementType; label: string }[] = [
     { key: 'profile', icon: User, label: 'Profile' },

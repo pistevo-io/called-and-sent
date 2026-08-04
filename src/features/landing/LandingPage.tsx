@@ -1,17 +1,62 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Globe, Users, Heart, MapPin, ArrowRight } from 'lucide-react';
+import { Globe, Users, Heart, MapPin, ArrowRight, LogOut } from 'lucide-react';
 import Footer from '../../shared/ui/Footer';
+import { useSessionState } from '../auth/useAuthGuards';
+import { signOut, resolveProfileSlug } from '../auth/authHelpers';
 
-export default function LandingPage() {
+/** Sticky landing nav that reflects auth state: logged-out visitors see Log in /
+ * Sign up, while authenticated users get Dashboard / Profile / Sign Out. */
+function LandingNav() {
+  const { state, user } = useSessionState();
+  const [signingOut, setSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await signOut();
+    } catch {
+      // signOut reloads on success; if it throws we still want to reset UI.
+      setSigningOut(false);
+    }
+  };
+
+  const profileSlug = resolveProfileSlug(user);
+
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      {/* Nav */}
-      <nav className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="text-xl font-bold tracking-tight">
-            Called <span className="text-mission-500">&</span> Sent
-          </Link>
+    <nav className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur border-b border-gray-800">
+      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <Link to="/" className="text-xl font-bold tracking-tight">
+          Called <span className="text-mission-500">&</span> Sent
+        </Link>
+
+        {state === 'authed' ? (
+          <div className="flex items-center gap-3">
+            <Link
+              to="/dashboard"
+              className="text-sm font-medium text-gray-300 hover:text-white px-4 py-2 rounded-full border border-gray-600 hover:border-mission-500 transition-all"
+            >
+              Dashboard
+            </Link>
+            <Link
+              to={`/@${profileSlug}`}
+              className="text-sm font-medium text-gray-300 hover:text-white px-4 py-2 rounded-full border border-gray-600 hover:border-mission-500 transition-all"
+            >
+              Profile
+            </Link>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-full bg-mission-600 hover:bg-mission-700 transition-all hover:scale-105 shadow-lg hover:shadow-mission-500/30 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              <LogOut className="w-4 h-4" />
+              {signingOut ? 'Signing out…' : 'Sign Out'}
+            </button>
+          </div>
+        ) : (
           <div className="flex items-center gap-3">
             <Link
               to="/login"
@@ -26,8 +71,16 @@ export default function LandingPage() {
               Sign up
             </Link>
           </div>
-        </div>
-      </nav>
+        )}
+      </div>
+    </nav>
+  );
+}
+
+export default function LandingPage() {
+  return (
+    <div className="min-h-screen bg-gray-900 text-white">
+      <LandingNav />
 
       {/* Hero */}
       <section className="relative min-h-screen flex flex-col items-center justify-center px-6 text-center">

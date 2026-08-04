@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   User, MapPin, Edit3, Plus, Trash2, Save, X, MessageSquare,
-  Calendar, Image, Settings, Share2, LogOut
+  Calendar, Settings, Share2, LogOut
 } from 'lucide-react';
 import { useRequireAuth, useSessionState } from '../auth/useAuthGuards';
 import { signOut, resolveProfileSlug } from '../auth/authHelpers';
-import { getProfile, upsertProfile, uploadImage } from '../../shared/api/profile';
+import { getProfile } from '../../shared/api/profile';
 import { wallPostsApi } from '../../shared/api/wallPosts';
 import { tripsApi } from '../../shared/api/trips';
 import type { MissionTrip } from '../../shared/types/MissionTrip';
@@ -93,7 +93,7 @@ function DashboardNav({ publicView }: { publicView: boolean }) {
   );
 }
 
-type Tab = 'profile' | 'trips' | 'wall';
+type Tab = 'trips' | 'wall';
 
 interface DashboardPageProps {
   /** Public, read-only view of a missionary's profile — no auth, no editing. */
@@ -139,41 +139,18 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
   // same batch would otherwise slip through before the button disables.
   const postSavingRef = useRef(false);
 
-  // Owner Profile tab: controlled inputs backed by the persistent store.
+  // Public read-only profile card state (consumed by the /@slug header). The
+  // values are hydrated by the public getProfile effect below; owner editing
+  // lives in /settings, so these are display-only here.
   const [profileName, setProfileName] = useState('');
   const [profileBio, setProfileBio] = useState('');
   const [profilePhoto, setProfilePhoto] = useState('');
-  const [profileSlug, setProfileSlug] = useState('');
-  const [savingProfile, setSavingProfile] = useState(false);
-  const [profileSaved, setProfileSaved] = useState(false);
-  const [profileError, setProfileError] = useState<string | null>(null);
 
-  // Local upload-status state for the R2 photo upload; `profilePhoto` holds
-  // the persisted R2 key returned by /api/upload (rendered as the avatar).
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
   // Loading flags for the public (read-only) view while it fetches the slug's
   // data from the API — covers the loading state of loading/empty/error/success.
   const [tripsLoading, setTripsLoading] = useState(false);
   const [wallLoading, setWallLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const handlePhotoPicked = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    setUploadError(null);
-    try {
-      const res = await uploadImage(file);
-      setProfilePhoto(res.url); // persisted R2 key; saveProfile writes it down
-    } catch (err) {
-      setUploadError(err instanceof Error ? err.message : 'Upload failed.');
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
 
   // The API is the single source of truth for trips + wall posts (see the effects
   // below). We intentionally do NOT seed from localStorage or static demo data —
@@ -243,29 +220,6 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
       });
   }, [publicView, auth.state, auth.user, slug]);
 
-  // Hydrate the owner Profile tab from the session + persistent store.
-  // Owner view is only rendered when authed, so `auth.user` is present here.
-  useEffect(() => {
-    if (publicView || auth.state !== 'authed' || !auth.user) return;
-    const slug = resolveProfileSlug(auth.user as never);
-    setProfileSlug(slug);
-    // Seed from session immediately so the inputs are never empty while we wait.
-    setProfileName(auth.user.name ?? '');
-    if (profilePhoto === '' && auth.user.image) setProfilePhoto(auth.user.image as string);
-    // Overlay stored values when present (these win over the session defaults).
-    getProfile(slug)
-      .then((p) => {
-        if (p) {
-          if (p.displayName) setProfileName(p.displayName);
-          if (p.bio != null) setProfileBio(p.bio);
-          if (p.photoUrl) setProfilePhoto(p.photoUrl);
-        }
-      })
-      .catch(() => {
-        // Leave the session-seeded defaults in place; saving will create it.
-      });
-  }, [publicView, auth.state, auth.user]);
-
   // Public read-only profile card: resolve the displayed name/bio/photo from the
   // API by slug. Falls back to the slug itself when the profile is unknown or the
   // API is unreachable, so the card never renders a fake name or breaks.
@@ -294,30 +248,6 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
       cancelled = true;
     };
   }, [publicView, slug]);
-
-  const saveProfile = async () => {
-    if (savingProfile) return;
-    setSavingProfile(true);
-    setProfileError(null);
-    setProfileSaved(false);
-    try {
-      const slug = await upsertProfile({
-        slug: profileSlug || resolveProfileSlug(auth.user as never),
-        displayName: profileName,
-        bio: profileBio,
-        photoUrl: profilePhoto || null,
-        theme: 'dark',
-      });
-      setProfileSlug(slug);
-      setProfileSaved(true);
-      // Reflect the persisted slug in the public profile links too.
-      setProfileSlug(slug);
-    } catch (err) {
-      setProfileError(err instanceof Error ? err.message : 'Failed to save profile.');
-    } finally {
-      setSavingProfile(false);
-    }
-  };
 
   // Owner trip writes go to the D1 API. On submit we POST (create) or PUT (update)
   // and reconcile local state with the server-assigned id; on failure we keep the
@@ -444,7 +374,6 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
   const tabs: { key: Tab; icon: React.ElementType; label: string }[] = [
     { key: 'trips', icon: MapPin, label: 'My Trips' },
     { key: 'wall', icon: MessageSquare, label: 'Wall Posts' },
-    { key: 'profile', icon: User, label: 'Profile' },
   ];
 
   return (
@@ -453,7 +382,42 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
       <DashboardNav publicView={publicView} />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
-        <h1 className="text-3xl font-bold mb-8">Your Dashboard</h1>
+        <h1 className="text-3xl font-bold mb-8">{publicView ? 'Missionary Profile' : 'Your Dashboard'}</h1>
+
+        {/* Public, read-only profile card — shown only on /@slug. The dashboard
+            (owner) view keeps profile editing in /settings, so there is no inline
+            Profile tab here. Anon visitors must never be able to mutate this. */}
+        {publicView && (
+          <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 sm:p-8 mb-8">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden shrink-0">
+                {profilePhoto ? (
+                  <img src={profilePhoto} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-6 h-6 text-gray-400" />
+                )}
+              </div>
+              <div>
+                <span className="block text-sm font-medium text-gray-400 mb-1.5">Display Name</span>
+                {profileLoading ? (
+                  <p className="text-gray-500">Loading…</p>
+                ) : (
+                  <p className="text-white text-lg font-semibold">{profileName || decodeURIComponent(slug ?? '')}</p>
+                )}
+              </div>
+            </div>
+            <div>
+              <span className="block text-sm font-medium text-gray-400 mb-1.5">Bio</span>
+              {profileLoading ? (
+                <p className="text-gray-500">Loading…</p>
+              ) : profileBio ? (
+                <p className="text-white whitespace-pre-line">{profileBio}</p>
+              ) : (
+                <p className="text-gray-500">No bio shared yet.</p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-1 bg-gray-800 rounded-xl p-1 mb-8 w-fit overflow-x-auto">
@@ -480,121 +444,6 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
         >
-          {/* Profile Tab */}
-          {activeTab === 'profile' && (
-            publicView ? (
-              /* Public, read-only view — no inputs, no upload, no save. Anon
-                 visitors on /@:slug must never be able to mutate the profile. */
-              <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 sm:p-8">
-                <h2 className="text-xl font-bold mb-6">Profile Information</h2>
-                <div className="space-y-5">
-                  <div>
-                    <span className="block text-sm font-medium text-gray-400 mb-1.5">Display Name</span>
-                    {profileLoading ? (
-                      <p className="text-gray-500">Loading…</p>
-                    ) : (
-                      <p className="text-white">{profileName || decodeURIComponent(slug ?? '')}</p>
-                    )}
-                  </div>
-                  <div>
-                    <span className="block text-sm font-medium text-gray-400 mb-1.5">Bio</span>
-                    {profileLoading ? (
-                      <p className="text-gray-500">Loading…</p>
-                    ) : profileBio ? (
-                      <p className="text-white whitespace-pre-line">{profileBio}</p>
-                    ) : (
-                      <p className="text-gray-500">No bio shared yet.</p>
-                    )}
-                  </div>
-                  <div>
-                    <span className="block text-sm font-medium text-gray-400 mb-1.5">Profile Photo</span>
-                    <div className="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden">
-                      {profilePhoto ? (
-                        <img src={profilePhoto} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <User className="w-6 h-6 text-gray-400" />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 sm:p-8">
-                <h2 className="text-xl font-bold mb-6">Profile Information</h2>
-                <div className="space-y-5">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1.5">Display Name</label>
-                    <input
-                      type="text"
-                      value={profileName}
-                      onChange={(e) => setProfileName(e.target.value)}
-                      placeholder="Your name"
-                      className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-mission-500 transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1.5">Bio</label>
-                    <textarea
-                      rows={4}
-                      value={profileBio}
-                      onChange={(e) => setProfileBio(e.target.value)}
-                      placeholder="Tell supporters about your mission…"
-                      className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-mission-500 transition-colors resize-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1.5">Profile Photo</label>
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden">
-                        {profilePhoto ? (
-                          <img src={profilePhoto} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <User className="w-6 h-6 text-gray-400" />
-                        )}
-                      </div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
-                        onChange={handlePhotoPicked}
-                        className="hidden"
-                      />
-                      <div className="flex flex-col gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={uploading}
-                          className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                        >
-                          <Image className="w-4 h-4" />
-                          {uploading ? 'Uploading…' : 'Upload Photo'}
-                        </button>
-                        {uploadError && <span className="text-xs text-red-400">{uploadError}</span>}
-                      </div>
-                    </div>
-                  </div>
-                  {profileError && (
-                    <p className="text-sm text-red-400" role="alert">{profileError}</p>
-                  )}
-                  <div className="pt-4 flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={saveProfile}
-                      disabled={savingProfile}
-                      className="flex items-center gap-2 bg-mission-600 hover:bg-mission-700 px-6 py-2.5 rounded-full text-sm font-semibold transition-all hover:scale-105 shadow-lg hover:shadow-mission-500/30 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
-                    >
-                      <Save className="w-4 h-4" />
-                      {savingProfile ? 'Saving…' : 'Save Profile'}
-                    </button>
-                    {profileSaved && !profileError && (
-                      <span className="text-sm text-green-400">Saved ✓</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )
-          )}
-
           {/* Trips Tab */}
           {activeTab === 'trips' && (
             <div>

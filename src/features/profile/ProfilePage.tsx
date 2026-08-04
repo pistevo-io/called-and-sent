@@ -28,7 +28,7 @@ export default function ProfilePage({ slug }: { slug?: string }) {
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
       <main className="flex-1">
-        <DashboardPage publicView defaultTab="profile" slug={slug} />
+        <DashboardPage publicView defaultTab="trips" slug={slug} />
       </main>
 
       <button

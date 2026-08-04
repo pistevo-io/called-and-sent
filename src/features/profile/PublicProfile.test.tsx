@@ -50,8 +50,9 @@ describe('Public profile (/@slug)', () => {
   it('renders for ANON users with NO redirect to /login', async () => {
     renderPublicProfile('/@k');
 
-    // Public content actually rendered (tab bar with My Trips).
-    expect(await screen.findByText(/My Trips/)).toBeTruthy();
+    // Public content actually rendered — "My Trips" appears as both the tab
+    // button and the trips section heading after the default trips tab.
+    expect((await screen.findAllByText(/My Trips/)).length).toBeGreaterThan(0);
     // Critical: no login redirect occurred.
     expect(screen.queryByText('LOGIN_PAGE_MARKER')).toBeNull();
     // Public view hides owner-only edit controls.
@@ -64,7 +65,7 @@ describe('Public profile (/@slug)', () => {
     vi.mocked(authClient.getSession).mockResolvedValue(authedSession as any);
     renderPublicProfile('/@k');
 
-    expect(await screen.findByText(/My Trips/)).toBeTruthy();
+    expect((await screen.findAllByText(/My Trips/)).length).toBeGreaterThan(0);
     expect(screen.queryByText('LOGIN_PAGE_MARKER')).toBeNull();
     // Even an authed visitor sees the PUBLIC (read-only) view — no Add Trip.
     expect(screen.queryByText('Add Trip')).toBeNull();

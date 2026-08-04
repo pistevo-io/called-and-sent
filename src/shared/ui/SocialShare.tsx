@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import { resolveShareUrl } from './shareUrl';
 import {
   Instagram,
   Mail,
@@ -124,7 +123,7 @@ export default function SocialShare({
     };
   }, []);
 
-  const fullText = `${text}\n\n${resolveShareUrl(url)}`;
+  const fullText = `${text}\n\n${url || window.location.href}`;
 
   const flashCopied = (key: string) => {
     if (timerRef.current !== null) clearTimeout(timerRef.current);

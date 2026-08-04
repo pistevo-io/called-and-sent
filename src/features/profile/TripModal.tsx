@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, MapPin, Calendar, Clock, Users, Heart, Share2 } from 'lucide-react';
 import type { MissionTrip } from '../../shared/types/MissionTrip';
 import SocialShare from '../../shared/ui/SocialShare';
-import { canonicalUrl } from '../../shared/ui/shareUrl';
 
 interface TripModalProps {
   trip: MissionTrip | null;
@@ -172,7 +171,7 @@ export default function TripModal({ trip, onClose }: TripModalProps) {
               <SocialShare
                 title={trip.title}
                 text={`${trip.title} — ${trip.location}, ${trip.country}. ${trip.description}`}
-                url={canonicalUrl(window.location.pathname)}
+                url={window.location.pathname}
               />
             </div>
           </div>

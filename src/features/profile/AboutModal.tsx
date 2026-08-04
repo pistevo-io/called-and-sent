@@ -27,7 +27,7 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
           onClick={(e) => e.stopPropagation()}
         >
           <div className="relative">
-            <div className="relative h-64 bg-gradient-to-r from-mission-900 via-mission-800 to-mission-900 overflow-hidden">
+            <div className="relative h-48 sm:h-64 bg-gradient-to-r from-mission-900 via-mission-800 to-mission-900 overflow-hidden">
               <img
                 src="/profile.jpeg"
                 alt="Profile"
@@ -38,8 +38,8 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
 
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center text-white">
-                  <h2 className="text-5xl font-bold mb-3">About Me</h2>
-                  <p className="text-xl text-mission-200">My Journey in Faith & Service</p>
+                  <h2 className="text-3xl sm:text-5xl font-bold mb-3">About Me</h2>
+                  <p className="text-base sm:text-xl text-mission-200">My Journey in Faith & Service</p>
                 </div>
               </div>
             </div>
@@ -52,7 +52,7 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
             </button>
           </div>
 
-          <div className="p-8 overflow-y-auto max-h-[calc(90vh-16rem)]">
+          <div className="p-4 sm:p-8 overflow-y-auto max-h-[calc(90vh-12rem)] sm:max-h-[calc(90vh-16rem)]">
             <div className="mb-8">
               <h3 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <Heart className="w-6 h-6 text-mission-600" fill="currentColor" />

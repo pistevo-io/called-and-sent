@@ -42,7 +42,7 @@ export default function ProfilePage() {
 
   if (checking) {
     return (
-      <div className="h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-mission-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -56,14 +56,14 @@ export default function ProfilePage() {
   const handleCloseSupport = () => setIsSupportOpen(false);
 
   return (
-    <div className="h-screen flex flex-col bg-gray-900">
-      <header className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white shadow-2xl border-b border-gray-700 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+    <div className="min-h-screen flex flex-col bg-gray-900">
+      <header className="sticky top-0 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white shadow-2xl border-b border-gray-700 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
           <div className="relative text-center">
             <a href="/" className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors text-sm">
               ← Called & Sent
             </a>
-            <h1 className="text-4xl font-bold tracking-tight">Called & Sent</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">Called & Sent</h1>
             <p className="text-gray-400 text-sm mt-2">"Therefore go and make disciples of all nations..." - Matthew 28:19-20</p>
             <button
               onClick={handleOpenAbout}
@@ -84,7 +84,7 @@ export default function ProfilePage() {
 
       <button
         onClick={handleOpenSupport}
-        className="fixed bottom-6 right-6 z-50 group"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 group"
         aria-label="Partner With Me"
       >
         <div className="flex items-center gap-3 bg-gradient-to-r from-mission-600 to-mission-700 hover:from-mission-500 hover:to-mission-600 text-white px-5 py-4 rounded-full shadow-2xl hover:shadow-mission-500/50 transition-all duration-300 hover:scale-110">

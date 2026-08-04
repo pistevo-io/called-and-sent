@@ -170,7 +170,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
           onClick={(e) => e.stopPropagation()}
         >
           <div className="relative">
-            <div className="relative h-64 bg-gradient-to-r from-mission-900 via-mission-800 to-mission-900">
+            <div className="relative h-48 sm:h-64 bg-gradient-to-r from-mission-900 via-mission-800 to-mission-900">
               <div className="absolute inset-0 opacity-10"
                 style={{
                   backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
@@ -180,8 +180,8 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center text-white">
                   <Heart className="w-16 h-16 mx-auto mb-4 animate-pulse" fill="currentColor" />
-                  <h2 className="text-5xl font-bold mb-3">Partner With Me</h2>
-                  <p className="text-xl text-mission-200">Join me in sharing the Good News of Jesus</p>
+                  <h2 className="text-3xl sm:text-5xl font-bold mb-3">Partner With Me</h2>
+                  <p className="text-base sm:text-xl text-mission-200">Join me in sharing the Good News of Jesus</p>
                 </div>
               </div>
             </div>
@@ -194,7 +194,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
             </button>
           </div>
 
-          <div className="p-8 overflow-y-auto max-h-[calc(90vh-16rem)]">
+          <div className="p-4 sm:p-8 overflow-y-auto max-h-[calc(90vh-12rem)] sm:max-h-[calc(90vh-16rem)]">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -202,7 +202,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
               viewport={{ once: true }}
               className="mb-8"
             >
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-8 mb-8">
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 sm:p-8 mb-8">
                 <div className="text-center mb-6">
                   <div className="inline-flex items-center justify-center w-16 h-16 bg-mission-600 rounded-full mb-4">
                     <Heart className="w-8 h-8 text-white" fill="currentColor" />
@@ -423,7 +423,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
               viewport={{ once: true }}
               className="mb-8"
             >
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center">
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 sm:p-8 text-center">
                 <DollarSign className="w-12 h-12 text-mission-600 mx-auto mb-4" />
                 <h3 className="text-2xl font-bold text-gray-900 mb-3">
                   Financial Partnership
@@ -449,7 +449,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
                 <h3 className="text-2xl font-bold text-gray-900 mb-3">
                   Mission Merchandise
                 </h3>
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-8 max-w-2xl mx-auto">
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 sm:p-8 max-w-2xl mx-auto">
                   <p className="text-gray-700 text-lg mb-2">
                     Coming Soon!
                   </p>

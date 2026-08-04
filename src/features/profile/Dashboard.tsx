@@ -91,7 +91,7 @@ export default function Dashboard({ trips, onTripSelect }: DashboardProps) {
         }}
       />
       <div className="h-full overflow-y-auto">
-        <div className="max-w-7xl mx-auto p-8 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {stats.map((stat, index) => (
             <motion.div
@@ -182,10 +182,10 @@ export default function Dashboard({ trips, onTripSelect }: DashboardProps) {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-            <h2 className="text-3xl font-bold text-white">Mission Timeline</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white">Mission Timeline</h2>
 
-            <div className="flex items-center gap-3 flex-1 justify-end">
+            <div className="flex flex-wrap items-center gap-3 sm:justify-end">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
@@ -193,7 +193,7 @@ export default function Dashboard({ trips, onTripSelect }: DashboardProps) {
                   placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-56 pl-10 pr-10 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-mission-500 transition-colors"
+                  className="w-full sm:w-56 pl-10 pr-10 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-mission-500 transition-colors"
                 />
                 {searchQuery && (
                   <button
@@ -208,7 +208,7 @@ export default function Dashboard({ trips, onTripSelect }: DashboardProps) {
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}
-                className="px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-mission-500 transition-colors cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-mission-500 transition-colors cursor-pointer"
               >
                 <option value="all">All Years</option>
                 {years.map(year => (
@@ -219,7 +219,7 @@ export default function Dashboard({ trips, onTripSelect }: DashboardProps) {
               <select
                 value={selectedCountry}
                 onChange={(e) => setSelectedCountry(e.target.value)}
-                className="px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-mission-500 transition-colors cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-mission-500 transition-colors cursor-pointer"
               >
                 <option value="all">All Countries</option>
                 {countries.map(country => (
@@ -234,7 +234,7 @@ export default function Dashboard({ trips, onTripSelect }: DashboardProps) {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as 'date-desc' | 'date-asc' | 'people')}
-                  className="px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-mission-500 transition-colors cursor-pointer"
+                  className="w-full sm:w-auto px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-mission-500 transition-colors cursor-pointer"
                 >
                   <option value="date-desc">Newest First</option>
                   <option value="date-asc">Oldest First</option>

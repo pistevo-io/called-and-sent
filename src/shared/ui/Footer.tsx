@@ -3,8 +3,8 @@ import { Instagram, BookOpen, Compass } from 'lucide-react';
 function Footer() {
   return (
     <footer className="bg-gray-900 border-t border-gray-800 py-4">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
           <div className="flex items-center gap-5">
             <a
               href="https://blog.calledandsent.me"
@@ -37,7 +37,7 @@ function Footer() {
           <p className="text-gray-500 text-sm italic">
             "It's not works, it's grace." - Ephesians 2:8-9
           </p>
-          <div className="w-32"></div>
+
         </div>
       </div>
     </footer>

@@ -34,3 +34,11 @@ dist-ssr
 .claude/
 CLAUDE.md
 .worktrees/
+
+# Cloudflare / wrangler
+.wrangler/
+cloudflare-env.d.ts
+worker-configuration.d.ts
+.dev.vars
+.dev.vars.*
+*.tsbuildinfo

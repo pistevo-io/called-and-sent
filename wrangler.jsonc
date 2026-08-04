@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "called-and-sent",
+  "compatibility_date": "2026-07-01",
+  "pages_build_output_dir": "dist",
+  "d1_databases": [
+    {
+      "binding": "called_and_sent",
+      "database_name": "called-and-sent",
+      "database_id": "58d292fd-1b32-43a8-814f-f47a7b0a9e80",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "called_and_sent_media",
+      "bucket_name": "called-and-sent-media"
+    }
+  ]
+}

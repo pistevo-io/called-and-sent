@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-gray-900 text-gray-300">
-      <div className="max-w-3xl mx-auto px-6 py-20">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -12,7 +12,7 @@ export default function PrivacyPolicy() {
             ← Back to Called &amp; Sent
           </a>
 
-          <h1 className="text-4xl font-bold text-white mb-2">Privacy Policy</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">Privacy Policy</h1>
           <p className="text-gray-500 mb-12">Last updated: August 3, 2026</p>
 
           <div className="space-y-8">

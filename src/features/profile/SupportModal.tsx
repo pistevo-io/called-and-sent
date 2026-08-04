@@ -108,7 +108,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
           setErrorMessage('');
         }, 5000);
       }
-    } catch (error) {
+    } catch {
       setFormStatus('error');
       setErrorMessage('Network error. Please check your connection and try again.');
       if (widgetIdRef.current && window.turnstile) {

@@ -8,7 +8,9 @@ import {
 import { useRequireAuth, useSessionState } from '../auth/useAuthGuards';
 import { signOut, resolveProfileSlug } from '../auth/authHelpers';
 import { missionTrips as seedTrips } from '../../shared/data/missionTrips';
+import { wallPosts as seedPosts } from '../../shared/data/wallPosts';
 import type { MissionTrip } from '../../shared/types/MissionTrip';
+import type { WallPost } from '../../shared/types/WallPost';
 import SocialShare from '../../shared/ui/SocialShare';
 
 /** Shared auth-aware top nav for the dashboard (and its public read-only view).
@@ -99,11 +101,6 @@ interface DashboardPageProps {
   defaultTab?: Tab;
 }
 
-interface WallPostForm {
-  title: string;
-  content: string;
-}
-
 export default function DashboardPage({ publicView = false, defaultTab = 'trips' }: DashboardPageProps) {
   const auth = useRequireAuth(!publicView);
   // Owner view blocks while the session resolves or until the anon redirect fires;
@@ -113,9 +110,9 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
   // render (and satisfies no-unstable-default-value).
   const [activeTab, setActiveTab] = useState<Tab>(() => defaultTab);
   const [trips, setTrips] = useState<MissionTrip[]>([]);
-  const [wallPosts, setWallPosts] = useState<WallPostForm[]>([]);
+  const [wallPosts, setWallPosts] = useState<WallPost[]>([]);
   const [editingTrip, setEditingTrip] = useState<MissionTrip | null>(null);
-  const [editingPost, setEditingPost] = useState<WallPostForm | null>(null);
+  const [editingPost, setEditingPost] = useState<WallPost | null>(null);
   const [showTripForm, setShowTripForm] = useState(false);
   const [showPostForm, setShowPostForm] = useState(false);
   const [sharingIdx, setSharingIdx] = useState<number | null>(null);
@@ -134,8 +131,29 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
     }, []);
     setTrips(deduped);
 
-    const savedPosts = localStorage.getItem('editor_posts');
-    if (savedPosts) setWallPosts(JSON.parse(savedPosts));
+    const savedRaw = JSON.parse(localStorage.getItem('editor_posts') || '[]');
+    // Normalize legacy posts (pre-id/date) so dedupe + render never break.
+    const savedPosts = (Array.isArray(savedRaw) ? savedRaw : []).map(
+      (p: Partial<WallPost>, i: number) => ({
+        id: p.id ?? `local-${Date.now()}-${i}`,
+        title: p.title ?? '',
+        content: p.content ?? '',
+        date: p.date ?? new Date().toISOString().slice(0, 10),
+      }),
+    ) as WallPost[];
+    const savedIds = new Set(savedPosts.map((p: WallPost) => p.id));
+    // Seed posts + any user-added localStorage posts, dedupe by id (prefer local).
+    const mergedPosts = [
+      ...seedPosts,
+      ...savedPosts.filter((p: WallPost) => !savedIds.has(p.id) || seedPosts.some((s) => s.id === p.id)),
+    ];
+    const dedupedPosts = mergedPosts.reduce<WallPost[]>((acc, p) => {
+      const existing = acc.findIndex((a) => a.id === p.id);
+      if (existing >= 0) acc[existing] = p;
+      else acc.push(p);
+      return acc;
+    }, []);
+    setWallPosts(dedupedPosts);
   }, []);
 
   const saveTrips = (updated: MissionTrip[]) => {
@@ -143,7 +161,7 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
     localStorage.setItem('editor_trips', JSON.stringify(updated));
   };
 
-  const savePosts = (updated: WallPostForm[]) => {
+  const savePosts = (updated: WallPost[]) => {
     setWallPosts(updated);
     localStorage.setItem('editor_posts', JSON.stringify(updated));
   };
@@ -198,45 +216,69 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
         >
           {/* Profile Tab */}
           {activeTab === 'profile' && (
-            <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 sm:p-8">
-              <h2 className="text-xl font-bold mb-6">Profile Information</h2>
-              <div className="space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1.5">Display Name</label>
-                  <input
-                    type="text"
-                    defaultValue="Keerthi"
-                    className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-mission-500 transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1.5">Bio</label>
-                  <textarea
-                    rows={4}
-                    defaultValue="Missionary sharing the Gospel across nations."
-                    className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-mission-500 transition-colors resize-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1.5">Profile Photo</label>
-                  <div className="flex items-center gap-4">
+            publicView ? (
+              /* Public, read-only view — no inputs, no upload, no save. Anon
+                 visitors on /@:slug must never be able to mutate the profile. */
+              <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 sm:p-8">
+                <h2 className="text-xl font-bold mb-6">Profile Information</h2>
+                <div className="space-y-5">
+                  <div>
+                    <span className="block text-sm font-medium text-gray-400 mb-1.5">Display Name</span>
+                    <p className="text-white">Keerthi</p>
+                  </div>
+                  <div>
+                    <span className="block text-sm font-medium text-gray-400 mb-1.5">Bio</span>
+                    <p className="text-white whitespace-pre-line">Missionary sharing the Gospel across nations.</p>
+                  </div>
+                  <div>
+                    <span className="block text-sm font-medium text-gray-400 mb-1.5">Profile Photo</span>
                     <div className="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center">
-                      <Upload className="w-6 h-6 text-gray-400" />
+                      <User className="w-6 h-6 text-gray-400" />
                     </div>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-colors">
-                      <Image className="w-4 h-4" />
-                      Upload Photo
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 sm:p-8">
+                <h2 className="text-xl font-bold mb-6">Profile Information</h2>
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1.5">Display Name</label>
+                    <input
+                      type="text"
+                      defaultValue="Keerthi"
+                      className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-mission-500 transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1.5">Bio</label>
+                    <textarea
+                      rows={4}
+                      defaultValue="Missionary sharing the Gospel across nations."
+                      className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-mission-500 transition-colors resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1.5">Profile Photo</label>
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center">
+                        <Upload className="w-6 h-6 text-gray-400" />
+                      </div>
+                      <button className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-colors">
+                        <Image className="w-4 h-4" />
+                        Upload Photo
+                      </button>
+                    </div>
+                  </div>
+                  <div className="pt-4">
+                    <button className="flex items-center gap-2 bg-mission-600 hover:bg-mission-700 px-6 py-2.5 rounded-full text-sm font-semibold transition-all hover:scale-105 shadow-lg hover:shadow-mission-500/30">
+                      <Save className="w-4 h-4" />
+                      Save Profile
                     </button>
                   </div>
                 </div>
-                <div className="pt-4">
-                  <button className="flex items-center gap-2 bg-mission-600 hover:bg-mission-700 px-6 py-2.5 rounded-full text-sm font-semibold transition-all hover:scale-105 shadow-lg hover:shadow-mission-500/30">
-                    <Save className="w-4 h-4" />
-                    Save Profile
-                  </button>
-                </div>
               </div>
-            </div>
+            )
           )}
 
           {/* Trips Tab */}
@@ -549,12 +591,12 @@ function PostFormEditor({
   onSave,
   onCancel,
 }: {
-  post: WallPostForm | null;
-  onSave: (post: WallPostForm) => void;
+  post: WallPost | null;
+  onSave: (post: WallPost) => void;
   onCancel: () => void;
 }) {
-  const [form, setForm] = useState<WallPostForm>(
-    post || { title: '', content: '' }
+  const [form, setForm] = useState<WallPost>(
+    post || { id: `new-${Date.now()}`, title: '', content: '', date: new Date().toISOString().slice(0, 10) }
   );
 
   const handleSubmit = (e: React.FormEvent) => {

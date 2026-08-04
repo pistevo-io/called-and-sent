@@ -22,7 +22,7 @@ export default function LoginPage() {
       if (error) {
         setError(error.message || 'Invalid email or password');
       } else {
-        navigate('/@k');
+        navigate('/dashboard');
       }
     } catch {
       setError('Something went wrong. Please try again.');
@@ -32,7 +32,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div
         className="absolute inset-0 opacity-[0.03] pointer-events-none"
         style={{
@@ -47,21 +47,21 @@ export default function LoginPage() {
       >
         <div className="text-center mb-8">
           <a href="/" className="inline-block">
-            <h1 className="text-4xl font-bold tracking-tight text-white">
+            <h1 className="text-4xl font-bold tracking-tight text-foreground">
               Called <span className="text-mission-500">&amp;</span> Sent
             </h1>
           </a>
-          <p className="text-gray-400 mt-2">Sign in to your account</p>
+          <p className="text-muted-foreground mt-2">Sign in to your account</p>
         </div>
 
-        <div className="bg-gray-800 border border-gray-700 rounded-2xl p-8 shadow-xl">
+        <div className="bg-card border border-border rounded-2xl p-8 shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1.5">
+              <label htmlFor="email" className="block text-sm font-medium text-foreground/80 mb-1.5">
                 Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
                   type="email"
                   id="email"
@@ -69,17 +69,17 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   required
-                  className="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-mission-500 transition-colors"
+                  className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-mission-500 transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1.5">
+              <label htmlFor="password" className="block text-sm font-medium text-foreground/80 mb-1.5">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   id="password"
@@ -87,12 +87,12 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-10 pr-12 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-mission-500 transition-colors"
+                  className="w-full pl-10 pr-12 py-3 bg-background border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-mission-500 transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -108,14 +108,14 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-mission-600 hover:bg-mission-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-lg font-semibold transition-colors"
+              className="w-full bg-mission-600 hover:bg-mission-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-full font-semibold transition-colors"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
         </div>
 
-        <p className="text-center text-gray-400 mt-6">
+        <p className="text-center text-muted-foreground mt-6">
           Don't have an account?{' '}
           <a href="/signup" className="text-mission-400 hover:text-mission-300 font-semibold transition-colors">
             Create one
@@ -123,7 +123,7 @@ export default function LoginPage() {
         </p>
 
         <p className="text-center mt-6">
-          <a href="/" className="text-gray-500 hover:text-gray-400 text-sm transition-colors">
+          <a href="/" className="text-muted-foreground hover:text-foreground text-sm transition-colors">
             ← Back to Called &amp; Sent
           </a>
         </p>

@@ -2,7 +2,7 @@ import { Instagram, BookOpen, Compass } from 'lucide-react';
 
 function Footer({ className = '' }: { className?: string }) {
   return (
-    <footer className={`bg-background border-t border-border py-4 ${className}`}>
+    <footer className={`bg-gray-900 border-t border-gray-700 py-4 ${className}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
           <div className="flex items-center gap-5">

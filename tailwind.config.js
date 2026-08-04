@@ -22,7 +22,16 @@ export default {
           gold: '#d4af37',
           cream: '#faf8f3',
           sage: '#9ca986',
-        }
+        },
+        // Semantic aliases (BRAND.md dark theme). Map the missing tokens used
+        // across the app to their real Tailwind gray equivalents so utilities
+        // such as bg-background, text-foreground, bg-card, border-border and
+        // text-muted-foreground actually emit CSS.
+        background: '#111827', // gray-900 — page background
+        foreground: '#ffffff', // white — text primary
+        card: '#1f2937', // gray-800 — surfaces, panels
+        border: '#374151', // gray-700 — dividers, borders
+        'muted-foreground': '#9ca3af', // gray-400 — secondary text
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',

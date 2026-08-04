@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Share2, Pencil, UserPlus, Check, Info } from 'lucide-react';
+import { ArrowLeft, Share2, Pencil, UserPlus, Check, Info } from 'lucide-react';
 import type { ProfileIdentity, ProfileTabDef } from './profileHeader.types';
 import './profileHeader.css';
 
@@ -15,17 +15,32 @@ export function TopBar({
   identity,
   onShare,
   onAbout,
+  onBack,
+  inlineName,
 }: {
   identity: ProfileIdentity;
   onShare: () => void;
   onAbout: () => void;
+  onBack?: () => void;
+  inlineName?: string;
 }) {
   return (
     <header className="ph-topbar">
+      {onBack && (
+        <button
+          type="button"
+          className="ph-topbar-icon ph-back"
+          aria-label="Back"
+          onClick={onBack}
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+      )}
       <Link to="/" className="ph-topbar-brand">
         <span className="ph-topbar-mark">C</span>
         <span>Called &amp; Sent</span>
       </Link>
+      {inlineName && <span className="ph-inline-name">{inlineName}</span>}
 
       <nav className="ph-topbar-links" aria-label="Primary">
         {NAV_LINKS.map((l, i) => (

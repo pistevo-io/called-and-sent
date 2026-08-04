@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, MapPin, Calendar, Clock, Users, Heart, Share2 } from 'lucide-react';
 import type { MissionTrip } from '../../shared/types/MissionTrip';
 import SocialShare from '../../shared/ui/SocialShare';
+import { canonicalUrl } from '../../shared/ui/shareUrl';
 
 interface TripModalProps {
   trip: MissionTrip | null;
@@ -164,9 +165,14 @@ export default function TripModal({ trip, onClose }: TripModalProps) {
                 <Share2 className="w-4 h-4" />
                 Share This Trip
               </h3>
+              {/* Share the canonical profile route for this trip's owner. There is
+                  no per-trip permalink route in the data model, so we point at the
+                  hosting /@slug profile page (clean path, no query/hash) rather than
+                  the generic window.location. */}
               <SocialShare
                 title={trip.title}
                 text={`${trip.title} — ${trip.location}, ${trip.country}. ${trip.description}`}
+                url={canonicalUrl(window.location.pathname)}
               />
             </div>
           </div>

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Globe, Users, Heart, MapPin, ArrowRight } from 'lucide-react';
 import Footer from '../../shared/ui/Footer';
@@ -5,6 +6,29 @@ import Footer from '../../shared/ui/Footer';
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
+      {/* Nav */}
+      <nav className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur border-b border-gray-800">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link to="/" className="text-xl font-bold tracking-tight">
+            Called <span className="text-mission-500">&</span> Sent
+          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/login"
+              className="text-sm font-medium text-gray-300 hover:text-white px-4 py-2 rounded-full border border-gray-600 hover:border-mission-500 transition-all"
+            >
+              Log in
+            </Link>
+            <Link
+              to="/signup"
+              className="text-sm font-semibold text-white px-4 py-2 rounded-full bg-mission-600 hover:bg-mission-700 transition-all hover:scale-105 shadow-lg hover:shadow-mission-500/30"
+            >
+              Sign up
+            </Link>
+          </div>
+        </div>
+      </nav>
+
       {/* Hero */}
       <section className="relative min-h-screen flex flex-col items-center justify-center px-6 text-center">
         <div
@@ -65,26 +89,10 @@ export default function LandingPage() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {[
-            {
-              icon: Globe,
-              title: 'Your Story',
-              desc: 'Share your testimony, calling, and faith journey in a beautiful, customizable profile.',
-            },
-            {
-              icon: MapPin,
-              title: 'Trip Portfolio',
-              desc: 'Document every mission trip with photos, maps, stories, and impact stats.',
-            },
-            {
-              icon: Heart,
-              title: 'Support Hub',
-              desc: 'Prayer requests, giving links, and a contact form — all in one place.',
-            },
-            {
-              icon: Users,
-              title: 'Faith Wall',
-              desc: 'Post updates, testimonies, and prayer requests. Your supporters stay connected.',
-            },
+            { icon: Globe, title: 'Your Story', desc: 'Share your testimony, calling, and faith journey in a beautiful, customizable profile.' },
+            { icon: MapPin, title: 'Trip Portfolio', desc: 'Document every mission trip with photos, maps, stories, and impact stats.' },
+            { icon: Heart, title: 'Support Hub', desc: 'Prayer requests, giving links, and a contact form — all in one place.' },
+            { icon: Users, title: 'Faith Wall', desc: 'Post updates, testimonies, and prayer requests. Your supporters stay connected.' },
           ].map((feature, i) => (
             <motion.div
               key={feature.title}
@@ -107,9 +115,7 @@ export default function LandingPage() {
       {/* Profile Preview */}
       <section className="py-24 px-6 bg-gray-800/50">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold mb-6">
-            What your profile looks like
-          </h2>
+          <h2 className="text-4xl font-bold mb-6">What your profile looks like</h2>
           <p className="text-gray-400 text-lg mb-12 max-w-2xl mx-auto">
             See a real missionary profile in action. This is what your supporters will see when you share your link.
           </p>

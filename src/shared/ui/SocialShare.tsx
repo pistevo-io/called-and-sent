@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { resolveShareUrl } from './shareUrl';
 import {
   Instagram,
   Mail,
@@ -114,13 +115,23 @@ export default function SocialShare({
   className = '',
 }: SocialShareProps) {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fullText = url ? `${text}\n\n${url}` : text;
+  // Clear any pending timeout on unmount to avoid setState-after-unmount.
+  useEffect(() => {
+    return () => {
+      if (timerRef.current !== null) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const fullText = `${text}\n\n${resolveShareUrl(url)}`;
 
   const flashCopied = (key: string) => {
+    if (timerRef.current !== null) clearTimeout(timerRef.current);
     setCopiedKey(key);
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       setCopiedKey((cur) => (cur === key ? null : cur));
+      timerRef.current = null;
     }, 1800);
   };
 
@@ -128,7 +139,11 @@ export default function SocialShare({
     if (platform.mode === 'mail') {
       const subject = encodeURIComponent(title);
       const body = encodeURIComponent(fullText);
-      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+      window.open(
+        `mailto:?subject=${subject}&body=${body}`,
+        '_blank',
+        'noopener,noreferrer',
+      );
       return;
     }
 
@@ -149,6 +164,16 @@ export default function SocialShare({
 
   return (
     <div className={`flex flex-wrap items-center gap-3 ${className}`}>
+      {/* Screen-reader-only live region: announces copy confirmation */}
+      <span
+        className="sr-only"
+        role="status"
+        aria-live="polite"
+      >
+        {copiedKey
+          ? `${PLATFORMS.find((p) => p.key === copiedKey)?.label ?? ''} link copied to clipboard`
+          : ''}
+      </span>
       {PLATFORMS.map((p) => {
         const Icon = p.icon;
         const copied = copiedKey === p.key;
@@ -175,12 +200,12 @@ export default function SocialShare({
                 <Icon className="w-5 h-5" />
               ) : null}
               {copied && (
-                <span className="absolute inset-0 flex items-center justify-center">
+                <span className="absolute inset-0 flex items-center justify-center" aria-hidden="true">
                   <Check className="w-5 h-5" />
                 </span>
               )}
             </button>
-            <span className="absolute -top-9 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2.5 py-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-lg">
+            <span className="absolute -top-9 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2.5 py-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-lg" aria-hidden="true">
               {copied ? 'Copied! Paste into the app' : `Share to ${p.label}`}
             </span>
           </span>

@@ -37,7 +37,20 @@ function Footer() {
           <p className="text-gray-500 text-sm italic">
             "It's not works, it's grace." - Ephesians 2:8-9
           </p>
-
+        </div>
+        <div className="flex justify-center gap-6 mt-3 pb-1">
+          <a
+            href="/privacy"
+            className="text-gray-600 hover:text-gray-400 text-xs transition-colors"
+          >
+            Privacy Policy
+          </a>
+          <a
+            href="/terms"
+            className="text-gray-600 hover:text-gray-400 text-xs transition-colors"
+          >
+            Terms of Service
+          </a>
         </div>
       </div>
     </footer>

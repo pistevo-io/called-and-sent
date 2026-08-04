@@ -8,6 +8,9 @@ import Footer from '../../shared/ui/Footer';
 import type { MissionTrip } from '../../shared/types/MissionTrip';
 
 // Public missionary page — viewable by anyone (logged in or not).
+// DashboardPage owns the single top nav (incl. auth-aware controls), so this
+// page only provides the public body + modals + footer. The outer container is
+// allowed to grow past the viewport so the trip list can scroll.
 export default function ProfilePage() {
   const [selectedTrip, setSelectedTrip] = useState<MissionTrip | null>(null);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
@@ -23,29 +26,8 @@ export default function ProfilePage() {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col bg-gray-900">
-      <header className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white shadow-2xl border-b border-gray-700 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="relative text-center">
-            <a href="/" className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors text-sm">
-              ← Called & Sent
-            </a>
-            <h1 className="text-4xl font-bold tracking-tight">Called & Sent</h1>
-            <p className="text-gray-400 text-sm mt-2">"Therefore go and make disciples of all nations..." - Matthew 28:19-20</p>
-            <button
-              onClick={() => setIsAboutOpen(true)}
-              className="absolute right-0 top-1/2 -translate-y-1/2"
-              aria-label="About"
-            >
-              <div className="bg-gray-800 hover:bg-mission-600 border-2 border-gray-700 hover:border-mission-500 p-1 rounded-full shadow-lg hover:shadow-mission-500/50 transition-all duration-300 hover:scale-125">
-                <img src="/mine.png" alt="Profile" className="w-8 h-8 rounded-full object-cover" />
-              </div>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 relative overflow-hidden">
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+      <main className="flex-1">
         <DashboardPage publicView defaultTab="profile" />
       </main>
 

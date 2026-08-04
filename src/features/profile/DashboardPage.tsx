@@ -3,12 +3,92 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   User, MapPin, Edit3, Plus, Trash2, Save, X, MessageSquare,
-  Calendar, Image, Upload, Settings, Share2
+  Calendar, Image, Upload, Settings, Share2, LogOut
 } from 'lucide-react';
-import { useRequireAuth } from '../auth/useAuthGuards';
+import { useRequireAuth, useSessionState } from '../auth/useAuthGuards';
+import { signOut, resolveProfileSlug } from '../auth/authHelpers';
 import { missionTrips as seedTrips } from '../../shared/data/missionTrips';
 import type { MissionTrip } from '../../shared/types/MissionTrip';
 import SocialShare from '../../shared/ui/SocialShare';
+
+/** Shared auth-aware top nav for the dashboard (and its public read-only view).
+ * Reuses the same session logic as the landing nav so logged-in users always
+ * see Dashboard / Profile / Sign Out instead of a confusing "Sign In" link. */
+function DashboardNav({ publicView }: { publicView: boolean }) {
+  const { state, user } = useSessionState();
+  const profileSlug = resolveProfileSlug(user);
+  const [signingOut, setSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await signOut();
+    } catch {
+      setSigningOut(false);
+    }
+  };
+
+  return (
+    <nav className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur border-b border-gray-800">
+      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <Link to="/" className="text-xl font-bold tracking-tight">
+          Called <span className="text-mission-500">&</span> Sent
+        </Link>
+
+        {state === 'authed' ? (
+          <div className="flex items-center gap-3">
+            {!publicView && (
+              <Link
+                to="/settings"
+                className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors text-sm"
+              >
+                <Settings className="w-4 h-4" />
+                Settings
+              </Link>
+            )}
+            <Link
+              to="/dashboard"
+              className="text-sm font-medium text-gray-300 hover:text-white px-4 py-2 rounded-full border border-gray-600 hover:border-mission-500 transition-all"
+            >
+              Dashboard
+            </Link>
+            <Link
+              to={`/@${profileSlug}`}
+              className="text-sm font-medium text-gray-300 hover:text-white px-4 py-2 rounded-full border border-gray-600 hover:border-mission-500 transition-all"
+            >
+              Profile
+            </Link>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-full bg-mission-600 hover:bg-mission-700 transition-all hover:scale-105 shadow-lg hover:shadow-mission-500/30 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              <LogOut className="w-4 h-4" />
+              {signingOut ? 'Signing out…' : 'Sign Out'}
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <Link
+              to="/login"
+              className="text-sm font-medium text-gray-300 hover:text-white px-4 py-2 rounded-full border border-gray-600 hover:border-mission-500 transition-all"
+            >
+              Log in
+            </Link>
+            <Link
+              to="/signup"
+              className="text-sm font-semibold text-white px-4 py-2 rounded-full bg-mission-600 hover:bg-mission-700 transition-all hover:scale-105 shadow-lg hover:shadow-mission-500/30"
+            >
+              Sign up
+            </Link>
+          </div>
+        )}
+      </div>
+    </nav>
+  );
+}
 
 type Tab = 'profile' | 'trips' | 'wall' | 'settings';
 
@@ -29,7 +109,9 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
   // Owner view blocks while the session resolves or until the anon redirect fires;
   // public view is always open.
   const checking = !publicView && auth.state !== 'authed';
-  const [activeTab, setActiveTab] = useState<Tab>(defaultTab);
+  // Initialize the tab once; the factory form avoids re-seeding the tab on every
+  // render (and satisfies no-unstable-default-value).
+  const [activeTab, setActiveTab] = useState<Tab>(() => defaultTab);
   const [trips, setTrips] = useState<MissionTrip[]>([]);
   const [wallPosts, setWallPosts] = useState<WallPostForm[]>([]);
   const [editingTrip, setEditingTrip] = useState<MissionTrip | null>(null);
@@ -84,23 +166,7 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Nav */}
-      <nav className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="text-xl font-bold tracking-tight">
-            Called <span className="text-mission-500">&</span> Sent
-          </Link>
-          {publicView ? (
-            <a href="/login" className="text-sm font-medium text-mission-400 hover:text-mission-300 transition-colors">
-              Sign In
-            </a>
-          ) : (
-            <Link to="/settings" className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors text-sm">
-              <Settings className="w-4 h-4" />
-              Settings
-            </Link>
-          )}
-        </div>
-      </nav>
+      <DashboardNav publicView={publicView} />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
         <h1 className="text-3xl font-bold mb-8">Your Dashboard</h1>

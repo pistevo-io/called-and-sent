@@ -7,12 +7,14 @@ import PrivacyPolicy from './features/legal/PrivacyPolicy';
 import TermsOfService from './features/legal/TermsOfService';
 import FontPreview from './components/FontPreview';
 import BrandExplorer from './components/BrandExplorer';
+import EditorDashboard from './features/dashboard/EditorDashboard';
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/dashboard" element={<EditorDashboard />} />
         <Route path="/:slug" element={<ProfileRouter />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />

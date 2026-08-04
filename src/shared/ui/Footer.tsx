@@ -1,4 +1,4 @@
-import { Instagram, BookOpen, Compass } from 'lucide-react';
+import { Instagram } from 'lucide-react';
 
 function Footer({ className = '' }: { className?: string }) {
   return (
@@ -6,24 +6,6 @@ function Footer({ className = '' }: { className?: string }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
           <div className="flex items-center gap-5">
-            <a
-              href="https://blog.calledandsent.me"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-muted-foreground hover:text-mission-400 transition-colors"
-            >
-              <BookOpen className="w-5 h-5" />
-              <span className="text-sm">Blog</span>
-            </a>
-            <a
-              href="https://emmaus.calledandsent.me"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-muted-foreground hover:text-mission-400 transition-colors"
-            >
-              <Compass className="w-5 h-5" />
-              <span className="text-sm">Emmaus</span>
-            </a>
             <a
               href="https://instagram.com/calledandsent.me"
               target="_blank"

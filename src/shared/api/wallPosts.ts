@@ -2,6 +2,7 @@
 //
 // Mirrors the verified contract in functions/api/wall-posts.ts:
 //   GET    /api/wall-posts?slug=<handle> -> public list { posts: WallPostDTO[] }
+//   GET    /api/wall-posts (no slug)     -> owner list of ALL statuses (auth)
 //   POST   /api/wall-posts               -> create (auth) -> { id }
 //   PUT    /api/wall-posts?id=<postId>   -> update (auth) -> { ok: true }
 //   DELETE /api/wall-posts?id=<postId>   -> delete (auth) -> { ok: true }
@@ -11,10 +12,8 @@
 // Reuses the shared jsonRequest + ApiError from the trips client so there is a
 // single error type across the dashboard's API calls.
 
-import type { WallPost } from "../types/WallPost";
+import type { WallPost, WallPostStatus } from "../types/WallPost";
 import { jsonRequest } from "./trips";
-
-export type WallPostStatus = "draft" | "published" | "archived";
 
 interface WallPostDTO {
   id: string;
@@ -32,6 +31,9 @@ function mapPost(raw: WallPostDTO): WallPost {
     title: raw.title ?? "",
     content: raw.content ?? "",
     date: raw.date ?? "",
+    status: raw.status ?? "draft",
+    postType: raw.postType ?? "update",
+    images: raw.images ?? [],
   };
 }
 
@@ -41,6 +43,13 @@ export const wallPostsApi = {
     const data = await jsonRequest<{ posts: WallPostDTO[] }>(
       `/api/wall-posts?slug=${encodeURIComponent(slug)}`,
     );
+    return (data.posts ?? []).map(mapPost);
+  },
+
+  /** Owner list of ALL posts (draft/published/archived) for the current user's
+   *  dashboard post manager. Requires an auth session cookie. */
+  async getOwnerPosts(): Promise<WallPost[]> {
+    const data = await jsonRequest<{ posts: WallPostDTO[] }>("/api/wall-posts");
     return (data.posts ?? []).map(mapPost);
   },
 
@@ -58,12 +67,12 @@ export const wallPostsApi = {
         id: post.id,
         title: post.title,
         content: post.content,
-        postType: "update",
+        postType: post.postType ?? "update",
         status: opts.status,
         images: opts.images,
       }),
     });
-    return { ...post, id: data.id };
+    return { ...post, id: data.id, status: opts.status ?? "draft" };
   },
 
   /** Update a wall post (auth). */
@@ -79,7 +88,7 @@ export const wallPostsApi = {
         body: JSON.stringify({
           title: post.title,
           content: post.content,
-          postType: "update",
+          postType: post.postType ?? "update",
           images: opts.images,
         }),
       },

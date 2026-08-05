@@ -281,9 +281,9 @@ describe('wall-posts public wall', () => {
     expect(unknown.posts).toHaveLength(0);
   });
 
-  it('returns 400 when slug is missing', async () => {
+  it('returns 401 for an unauthenticated list without slug', async () => {
     const res = await req('/api/wall-posts');
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(401);
   });
 
   it('returns images alongside a published post', async () => {
@@ -323,5 +323,49 @@ describe('wall-posts public wall', () => {
 
     const list = await publicList('alice');
     expect(list.posts[0].images).toEqual(['https://x/b', 'https://x/c']);
+  });
+});
+
+describe('wall-posts owner read (dashboard post manager)', () => {
+  it('returns ALL statuses for the authenticated user (no slug)', async () => {
+    await req('/api/wall-posts', {
+      method: 'POST',
+      headers: authedHeaders('tok-alice'),
+      body: JSON.stringify({ title: 'A published', status: 'published' }),
+    });
+    await req('/api/wall-posts', {
+      method: 'POST',
+      headers: authedHeaders('tok-alice'),
+      body: JSON.stringify({ title: 'A draft' }),
+    });
+    await req('/api/wall-posts', {
+      method: 'POST',
+      headers: authedHeaders('tok-alice'),
+      body: JSON.stringify({ title: 'A archived', status: 'archived' }),
+    });
+    // Another user's post must NOT leak into Alice's owner list.
+    await req('/api/wall-posts', {
+      method: 'POST',
+      headers: authedHeaders('tok-dave'),
+      body: JSON.stringify({ title: 'Dave draft' }),
+    });
+
+    const res = await req('/api/wall-posts', { headers: authedHeaders('tok-alice') });
+    expect(res.status).toBe(200);
+    const { posts } = (await res.json()) as { posts: Array<Record<string, unknown>> };
+
+    // Every status present, only Alice's posts.
+    const titles = posts.map((p) => p.title);
+    expect(titles).toEqual(expect.arrayContaining(['A published', 'A draft', 'A archived']));
+    expect(titles).not.toContain('Dave draft');
+    const statuses = posts.map((p) => p.status);
+    expect(statuses).toEqual(expect.arrayContaining(['draft', 'published', 'archived']));
+  });
+
+  it('returns an empty list for an authed user with no posts', async () => {
+    const res = await req('/api/wall-posts', { headers: authedHeaders('tok-dave') });
+    expect(res.status).toBe(200);
+    const { posts } = (await res.json()) as { posts: Array<Record<string, unknown>> };
+    expect(posts).toHaveLength(0);
   });
 });

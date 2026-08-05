@@ -3,6 +3,8 @@
 // Endpoints:
 //   GET  /api/wall-posts?slug=<handle>   -> PUBLIC list of PUBLISHED posts for
 //                                            that profile (drafts/archived never leak).
+//   GET  /api/wall-posts (no slug, auth) -> OWNER list of ALL statuses for the
+//                                            authenticated user (dashboard post manager).
 //   POST /api/wall-posts                 -> create (auth, scoped to user_id)
 //   PUT  /api/wall-posts?id=<postId>     -> update OR transition status (auth)
 //   DELETE /api/wall-posts?id=<postId>   -> delete (auth)
@@ -110,16 +112,39 @@ async function replaceImages(env: Env, postId: string, images: string[]): Promis
 }
 
 async function handleList(request: Request, env: Env): Promise<Response> {
-  const slug = new URL(request.url).searchParams.get('slug');
-  if (!slug) return json({ error: 'slug query param required' }, 400);
+  const searchParams = new URL(request.url).searchParams;
+  const slug = searchParams.get('slug');
 
-  const user = await env.called_and_sent
+  // Owner read (dashboard): no slug + valid session -> return ALL statuses
+  // (draft/published/archived) for the authenticated user, so the post
+  // manager can render every lifecycle view. This intentionally skips the
+  // public published-only seam.
+  if (!slug) {
+    const user = await requireUser(request, env);
+    if (!user) return json({ error: 'Unauthorized' }, 401);
+
+    const { results } = await env.called_and_sent
+      .prepare(
+        `SELECT * FROM wall_posts
+         WHERE user_id = ?
+         ORDER BY created_at DESC`,
+      )
+      .bind(user.id)
+      .all();
+    const raw = results as Record<string, unknown>[];
+    const posts = await Promise.all(
+      raw.map(async (r) => rowToPost(r, await postImages(env, r.id as string))),
+    );
+    return json({ posts });
+  }
+
+  const profile = await env.called_and_sent
     .prepare('SELECT user_id FROM profiles WHERE slug = ?')
     .bind(slug)
     .first<{ user_id: string }>();
-  if (!user) return json({ posts: [] });
+  if (!profile) return json({ posts: [] });
 
-  const { results } = await publishedPosts(env, user.user_id);
+  const { results } = await publishedPosts(env, profile.user_id);
   const raw = results as Record<string, unknown>[];
 
   const posts = await Promise.all(

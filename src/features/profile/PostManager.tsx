@@ -1,9 +1,14 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Plus, Save, X, Trash2, Edit3, Share2, Send, Archive, RotateCcw, Calendar,
+  ImagePlus, ChevronLeft, ChevronRight, Loader2,
 } from 'lucide-react';
 import type { WallPost, WallPostStatus } from '../../shared/types/WallPost';
 import SocialShare from '../../shared/ui/SocialShare';
+import { uploadImage } from '../../shared/api/profile';
+
+/** Cap for images per post (matches the wall-posts multi-image spec of up to 9). */
+const MAX_IMAGES = 9;
 
 /** Ordered lifecycle views for the owner post manager. Public (read-only) view
  *  always lists published posts with no tabs / no actions. */
@@ -255,6 +260,11 @@ function PostCard({
         )}
       </div>
 
+      {/* Ordered image carousel — renders on owner + public cards. */}
+      {post.images && post.images.length > 0 && (
+        <PostCarousel images={post.images} alt={post.title} />
+      )}
+
       {/* Lifecycle actions — only the transitions valid from the current status. */}
       {!publicView && onTransition && status !== 'draft' && (
         <div className="flex items-center gap-3 border-t border-gray-700 pt-3">
@@ -351,6 +361,52 @@ function StatusAction({
   );
 }
 
+/** Ordered carousel of a post's images. Reuses the TripModal pattern: arrows when
+ *  more than one image, and a counter. Rendered on published cards (owner + public)
+ *  and on the grid preview inside the composer. */
+function PostCarousel({ images, alt }: { images: string[]; alt?: string }) {
+  const [index, setIndex] = useState(0);
+  if (images.length === 0) return null;
+
+  const clamped = index < images.length ? index : 0;
+  const next = () => setIndex((cur) => (cur + 1) % images.length);
+  const prev = () => setIndex((cur) => (cur - 1 + images.length) % images.length);
+
+  return (
+    <div className="relative group rounded-xl overflow-hidden bg-gray-900">
+      <img
+        src={images[clamped]}
+        alt={alt ? `${alt} — image ${clamped + 1} of ${images.length}` : `Post image ${clamped + 1} of ${images.length}`}
+        loading="lazy"
+        className="w-full h-56 sm:h-64 object-cover"
+      />
+      {images.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); prev(); }}
+            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Previous image"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); next(); }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Next image"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+          <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
+            {clamped + 1} / {images.length}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function PostForm({
   post,
   saving = false,
@@ -372,11 +428,47 @@ function PostForm({
       postType: 'update',
     },
   );
+  const [images, setImages] = useState<string[]>(post?.images ?? []);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadError(null);
+
+    // Upload sequentially; a single failed file surfaces an error and stops.
+    for (const file of Array.from(files)) {
+      if (images.length >= MAX_IMAGES) break;
+      setUploading(true);
+      try {
+        const { url } = await uploadImage(file);
+        setImages((cur) => [...cur, url].slice(0, MAX_IMAGES));
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Upload failed.';
+        setUploadError(msg);
+        break;
+      } finally {
+        setUploading(false);
+      }
+    }
+    if (fileRef.current) fileRef.current.value = '';
+  };
+
+  const moveImage = (from: number, to: number) => {
+    setImages((cur) => {
+      if (to < 0 || to >= cur.length) return cur;
+      const next = [...cur];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title || !form.content) return;
-    onSave(form);
+    if (!form.title || !form.content || uploading) return;
+    onSave({ ...form, images });
   };
 
   return (
@@ -402,6 +494,85 @@ function PostForm({
           className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-mission-500 transition-colors resize-none"
         />
       </div>
+
+      {/* Photos — ordered, up to 9, uploaded via the R2 /api/upload flow. */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <label htmlFor="post-images" className="block text-sm font-medium text-gray-400">
+            Photos
+            <span className="ml-2 text-xs text-gray-500">{images.length} / {MAX_IMAGES}</span>
+          </label>
+          <input
+            ref={fileRef}
+            id="post-images"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+            multiple
+            disabled={uploading || images.length >= MAX_IMAGES}
+            onChange={(e) => handleFiles(e.target.files)}
+            className="hidden"
+          />
+          <button
+            type="button"
+            disabled={uploading || images.length >= MAX_IMAGES}
+            onClick={() => fileRef.current?.click()}
+            className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed px-3 py-1.5 rounded-full text-sm font-medium transition-all"
+          >
+            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
+            {uploading ? 'Uploading…' : 'Add Photos'}
+          </button>
+        </div>
+
+        {uploadError && (
+          <p className="text-sm text-red-400 mb-2" role="alert">{uploadError}</p>
+        )}
+
+        {images.length > 0 && (
+          <div className="space-y-3">
+            <PostCarousel images={images} alt={form.title || 'Post'} />
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+              {images.map((url, i) => (
+                <div key={url} className="relative group bg-gray-900 rounded-lg overflow-hidden">
+                  <img
+                    src={url}
+                    alt={`Post image ${i + 1}`}
+                    className="w-full h-16 object-cover"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={() => moveImage(i, i - 1)}
+                      disabled={i === 0}
+                      className="p-1 bg-white/20 hover:bg-white/40 rounded disabled:opacity-30"
+                      aria-label="Move image left"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5 text-white" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveImage(i, i + 1)}
+                      disabled={i === images.length - 1}
+                      className="p-1 bg-white/20 hover:bg-white/40 rounded disabled:opacity-30"
+                      aria-label="Move image right"
+                    >
+                      <ChevronRight className="w-3.5 h-3.5 text-white" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setImages((cur) => cur.filter((_, j) => j !== i))}
+                      className="p-1 bg-red-600/80 hover:bg-red-600 rounded"
+                      aria-label={`Remove image ${i + 1}`}
+                    >
+                      <X className="w-3.5 h-3.5 text-white" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         <div>
           <label htmlFor="post-type" className="block text-sm font-medium text-gray-400 mb-1">Type</label>

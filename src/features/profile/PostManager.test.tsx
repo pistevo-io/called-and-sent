@@ -35,8 +35,22 @@ vi.mock('../../shared/api/wallPosts', () => ({
   },
 }));
 
+// Deterministic R2 upload for the compose form's multi-photo flow.
+vi.mock('../../shared/api/profile', () => ({
+  uploadImage: vi.fn(),
+}));
+
 import { authClient } from '../auth/auth';
 import { wallPostsApi } from '../../shared/api/wallPosts';
+import { uploadImage } from '../../shared/api/profile';
+
+/** Build a synthetic File with a deterministic R2-style response URL. */
+const makeImageFile = (label: string) => {
+  const file = new File([label], `${label}.png`, { type: 'image/png' });
+  Object.defineProperty(file, 'size', { value: 1024 });
+  return file;
+};
+const urlFor = (label: string) => `${label}.png`;
 
 const authedSession = {
   data: { user: { id: '1', slug: 'k', name: 'Keerthi' }, session: { id: 's1' } },
@@ -224,5 +238,140 @@ describe('Post manager wired through DashboardPage (mocked API)', () => {
     // Optimistic parent state drops the post from Drafts and shows it Published.
     fireEvent.click(screen.getByRole('tab', { name: /Published/ }));
     expect(await screen.findByText('Draft Post')).toBeTruthy();
+  });
+});
+
+describe('PostMultiImage (carousel + ordered upload)', () => {
+  const photoPost: WallPost = {
+    id: 'pp1', title: 'Photo Post', content: 'With photos.',
+    date: '2026-08-05', status: 'published', postType: 'update',
+    images: [urlFor('one'), urlFor('two'), urlFor('three')],
+  };
+  const singlePhoto: WallPost = {
+    id: 'sp1', title: 'Single Photo', content: 'One image.', date: '2026-08-05',
+    status: 'published', postType: 'update', images: [urlFor('only')],
+  };
+
+  it('renders a multi-image carousel on a card with arrows + counter (owner + public)', () => {
+    render(
+      <PostManager posts={[photoPost]} publicView={false} saving={false} error={null}
+        onSave={noop} onDelete={noop} onTransition={noop} />,
+    );
+    // Owner card: carousel with a counter and a next arrow.
+    expect(screen.getByText('Photo Post')).toBeTruthy();
+    expect(screen.getAllByText('1 / 3').length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: 'Next image' })).toBeTruthy();
+
+    cleanup();
+    render(
+      <PostManager posts={[photoPost]} publicView saving={false} error={null}
+        onSave={noop} onDelete={noop} onTransition={noop} />,
+    );
+    expect(screen.getByText('Photo Post')).toBeTruthy();
+    expect(screen.getAllByText('1 / 3').length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: 'Next image' })).toBeTruthy();
+  });
+
+  it('hides carousel controls (arrows/counter) when a card has a single image', () => {
+    render(
+      <PostManager posts={[singlePhoto]} publicView={false} saving={false} error={null}
+        onSave={noop} onDelete={noop} onTransition={noop} />,
+    );
+    expect(screen.getByText('Single Photo')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Next image' })).toBeNull();
+    expect(screen.queryByText(/ \/ 1$/)).toBeNull();
+  });
+
+  it('uploads selected files through uploadImage and saves ordered images on the post', async () => {
+    vi.mocked(uploadImage)
+      .mockResolvedValueOnce({ key: 'one', url: urlFor('one') })
+      .mockResolvedValueOnce({ key: 'two', url: urlFor('two') });
+    const onSave = vi.fn<(post: WallPost) => void>();
+    render(
+      <PostManager posts={[]} publicView={false} saving={false} error={null}
+        onSave={onSave} onDelete={noop} onTransition={noop} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /New Post/ }));
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Photo Update' } });
+    fireEvent.change(screen.getByLabelText('Content'), { target: { value: 'With uploaded photos.' } });
+
+    const input = screen.getByLabelText(/Photos/).closest('input') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [makeImageFile('one'), makeImageFile('two')] },
+    });
+
+    await vi.waitFor(() => expect(uploadImage).toHaveBeenCalledTimes(2));
+    // Uploaded refs show in the label counter (2 of 9) and the photo grid + carousel.
+    expect(screen.getAllByText('2 / 9').length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save as Draft' }));
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect(onSave.mock.calls[0][0].images).toEqual([urlFor('one'), urlFor('two')]);
+  });
+
+  it('caps photo count at 9 and disables Add Photos once full', async () => {
+    const urls = Array.from({ length: 9 }, (_, i) => urlFor(`img${i}`));
+    vi.mocked(uploadImage).mockImplementation(async (file: Blob) => {
+      const name = (file as File).name;
+      return { key: name, url: name };
+    });
+    render(
+      <PostManager posts={[]} publicView={false} saving={false} error={null}
+        onSave={noop} onDelete={noop} onTransition={noop} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /New Post/ }));
+
+    const input = screen.getByLabelText(/Photos/).closest('input') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: urls.map((_, i) => makeImageFile(`img${i}`)) },
+    });
+    await vi.waitFor(() => expect(uploadImage).toHaveBeenCalledTimes(9));
+
+    expect(screen.getAllByText('9 / 9').length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: /Add Photos/ }).hasAttribute('disabled')).toBe(true);
+    void urls;
+  });
+});
+
+describe('PostMultiImage wired through DashboardPage', () => {
+  it('passes ordered images to createPost when a draft with photos is saved', async () => {
+    vi.mocked(wallPostsApi.getOwnerPosts).mockResolvedValue([]);
+    vi.mocked(wallPostsApi.createPost).mockResolvedValue({
+      id: 'photo-1', title: 'Photo Draft', content: 'Has photos.',
+      date: '2026-08-05', status: 'draft', postType: 'update',
+      images: [urlFor('a'), urlFor('b')],
+    });
+
+    render(
+      <MemoryRouter>
+        <DashboardPage defaultTab="wall" />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: /New Post/ }));
+    fireEvent.change(screen.getByLabelText('Content'), { target: { value: 'Has photos.' } });
+
+    // Seed the form with two already-uploaded image refs (uploads are mocked
+    // at the R2 layer; here we exercise the wiring that threads images to the API).
+    const input = screen.getByLabelText(/Photos/).closest('input') as HTMLInputElement;
+    vi.mocked(uploadImage)
+      .mockResolvedValueOnce({ key: 'a', url: urlFor('a') })
+      .mockResolvedValueOnce({ key: 'b', url: urlFor('b') });
+    fireEvent.change(input, {
+      target: { files: [makeImageFile('a'), makeImageFile('b')] },
+    });
+    // Let the mocked R2 uploads resolve so post.images is populated before save.
+    await vi.waitFor(() => expect(uploadImage).toHaveBeenCalledTimes(2));
+
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Photo Draft' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save as Draft' }));
+
+    await vi.waitFor(() =>
+      expect(wallPostsApi.createPost).toHaveBeenCalledTimes(1),
+    );
+    const [, opts] = vi.mocked(wallPostsApi.createPost).mock.calls[0];
+    expect(opts?.images).toEqual([urlFor('a'), urlFor('b')]);
+    expect(wallPostsApi.updatePost).not.toHaveBeenCalled();
   });
 });

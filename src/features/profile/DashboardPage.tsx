@@ -339,13 +339,16 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
       : null;
     try {
       if (isEdit) {
-        await wallPostsApi.updatePost(post.id, post);
+        await wallPostsApi.updatePost(post.id, post, {
+          images: post.images,
+        });
         if (originalStatus !== null && post.status && post.status !== originalStatus) {
           await wallPostsApi.transitionPost(post.id, post.status);
         }
       } else {
         const created = await wallPostsApi.createPost(post, {
           status: post.status ?? 'draft',
+          images: post.images,
         });
         setWallPosts((cur) => cur.map((p) => (p.id === post.id ? created : p)));
       }

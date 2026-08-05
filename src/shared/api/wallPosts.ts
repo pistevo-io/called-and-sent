@@ -14,12 +14,16 @@
 import type { WallPost } from "../types/WallPost";
 import { jsonRequest } from "./trips";
 
+export type WallPostStatus = "draft" | "published" | "archived";
+
 interface WallPostDTO {
   id: string;
-  title: string;
+  title: string | null;
   content: string | null;
   date?: string;
   postType?: string;
+  status?: WallPostStatus;
+  images?: string[];
 }
 
 function mapPost(raw: WallPostDTO): WallPost {
@@ -44,7 +48,10 @@ export const wallPostsApi = {
    *  local/temp id); we forward it so the server stores a stable uuid and
    *  returns it, letting the UI reconcile optimistic state. Returns the
    *  persisted post. */
-  async createPost(post: WallPost): Promise<WallPost> {
+  async createPost(
+    post: WallPost,
+    opts: { status?: WallPostStatus; images?: string[] } = {},
+  ): Promise<WallPost> {
     const data = await jsonRequest<{ id: string }>("/api/wall-posts", {
       method: "POST",
       body: JSON.stringify({
@@ -52,13 +59,19 @@ export const wallPostsApi = {
         title: post.title,
         content: post.content,
         postType: "update",
+        status: opts.status,
+        images: opts.images,
       }),
     });
     return { ...post, id: data.id };
   },
 
   /** Update a wall post (auth). */
-  async updatePost(id: string, post: WallPost): Promise<void> {
+  async updatePost(
+    id: string,
+    post: WallPost,
+    opts: { images?: string[] } = {},
+  ): Promise<void> {
     await jsonRequest<{ ok: true }>(
       `/api/wall-posts?id=${encodeURIComponent(id)}`,
       {
@@ -67,7 +80,19 @@ export const wallPostsApi = {
           title: post.title,
           content: post.content,
           postType: "update",
+          images: opts.images,
         }),
+      },
+    );
+  },
+
+  /** Transition a post's lifecycle status (publish / unpublish / archive). */
+  async transitionPost(id: string, status: WallPostStatus): Promise<void> {
+    await jsonRequest<{ ok: true }>(
+      `/api/wall-posts?id=${encodeURIComponent(id)}`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ status }),
       },
     );
   },

@@ -15,3 +15,7 @@ implementation detail, no spec. Terms land here the moment they resolve.
 - **Archived** — a post removed from the public feed but retained, not deleted.
 - **Unpublish** — the action of returning a published post to draft.
 - **Delete** — hard removal of a post; cannot be undone.
+- **Links block** — up to four named external links on a profile's public card:
+  **website**, **instagram**, **facebook**, and **giving** (a Donate/partner
+  page). Capped at four slots by design; the API enforces the cap and only
+  stores http(s) URLs. Empty slots are simply omitted from the response.

@@ -92,3 +92,17 @@ npm run dev      # Start dev server (localhost:5173)
 npm run build    # TypeScript + Vite production build
 npm run lint     # ESLint
 ```
+
+## Agent skills
+
+### Issue tracker
+
+Cards on the Hermes kanban board `calledandsent` — kanban is the source of truth; open cards can be mirrored to GitHub issues via the `kanban-github-sync` skill. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default roles map to kanban state (`needs-triage`→triage, `ready-for-agent`→ready+assignee, `needs-info`→blocked, `ready-for-human`→scheduled, `wontfix`→archived). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context — one `CONTEXT.md` + `docs/adr/` at the repo root, created lazily by `/domain-modeling`. See `docs/agents/domain.md`.

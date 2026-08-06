@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   User, MapPin, Edit3, Plus, Trash2, Save, X, MessageSquare,
-  Calendar, Settings, Share2, LogOut
+  Settings, LogOut
 } from 'lucide-react';
 import { useRequireAuth, useSessionState } from '../auth/useAuthGuards';
 import { signOut, resolveProfileSlug } from '../auth/authHelpers';
@@ -12,7 +12,8 @@ import { wallPostsApi } from '../../shared/api/wallPosts';
 import { tripsApi } from '../../shared/api/trips';
 import type { MissionTrip } from '../../shared/types/MissionTrip';
 import type { WallPost } from '../../shared/types/WallPost';
-import SocialShare from '../../shared/ui/SocialShare';
+import PostManager from './PostManager';
+import type { WallPostStatus } from '../../shared/types/WallPost';
 
 /** Shared auth-aware top nav for the dashboard (and its public read-only view).
  * Reuses the same session logic as the landing nav so logged-in users always
@@ -117,10 +118,7 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
   const [trips, setTrips] = useState<MissionTrip[]>([]);
   const [wallPosts, setWallPosts] = useState<WallPost[]>([]);
   const [editingTrip, setEditingTrip] = useState<MissionTrip | null>(null);
-  const [editingPost, setEditingPost] = useState<WallPost | null>(null);
   const [showTripForm, setShowTripForm] = useState(false);
-  const [showPostForm, setShowPostForm] = useState(false);
-  const [sharingIdx, setSharingIdx] = useState<number | null>(null);
   // Inline error surfaced when a trip delete fails against the API (never silent-drop).
   const [tripError, setTripError] = useState<string | null>(null);
   // Save-state for the owner trip create/update flow (POST/PUT on submit).
@@ -210,8 +208,12 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
         ? resolveProfileSlug(auth.user as never)
         : null;
     if (!target) return;
-    wallPostsApi
-      .getWallPosts(target)
+    // Owner view fetches EVERY status (drafts + archived included) so the
+    // post manager can render all three buckets; public reads stay published-only.
+    const request = publicView
+      ? wallPostsApi.getWallPosts(target)
+      : wallPostsApi.getOwnerPosts();
+    request
       .then((apiPosts) => {
         setWallPosts(apiPosts);
       })
@@ -305,6 +307,9 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
   // Owner post writes go to the D1 API. Create -> POST, update -> PUT; we
   // reconcile local state with the server-assigned id. On failure we roll back
   // to the prior in-memory list (no silent drop, no localStorage drift).
+  // A create or edit carries the target status from the post manager form, so
+  // saves can land as draft or published directly; a status change on edit is
+  // applied via transitionPost after the content PUT.
   // Public/anon views never reach the API branch (the form + edit/delete
   // controls are gated by !publicView).
   const handleSavePost = async (post: WallPost, isEdit: boolean) => {
@@ -327,11 +332,24 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
       ? prev.map((p) => (p.id === post.id ? post : p))
       : [...prev, post];
     setWallPosts(optimistic);
+    // The status the post had before this edit — used to detect a status change
+    // the form made while editing (content PUT + status transition).
+    const originalStatus = isEdit
+      ? prev.find((p) => p.id === post.id)?.status ?? 'draft'
+      : null;
     try {
       if (isEdit) {
-        await wallPostsApi.updatePost(post.id, post);
+        await wallPostsApi.updatePost(post.id, post, {
+          images: post.images,
+        });
+        if (originalStatus !== null && post.status && post.status !== originalStatus) {
+          await wallPostsApi.transitionPost(post.id, post.status);
+        }
       } else {
-        const created = await wallPostsApi.createPost(post);
+        const created = await wallPostsApi.createPost(post, {
+          status: post.status ?? 'draft',
+          images: post.images,
+        });
         setWallPosts((cur) => cur.map((p) => (p.id === post.id ? created : p)));
       }
     } catch (err) {
@@ -342,6 +360,21 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
       postSavingRef.current = false;
     }
   };
+
+  // Lifecycle transition (publish / unpublish / archive / restore). Optimistic
+  // apply so the post moves buckets immediately, with rollback on API failure.
+  const handlePostTransition = async (id: string, status: WallPostStatus) => {
+    const prev = wallPosts;
+    const optimistic = prev.map((p) => (p.id === id ? { ...p, status } : p));
+    setWallPosts(optimistic);
+    try {
+      await wallPostsApi.transitionPost(id, status);
+    } catch (err) {
+      setWallPosts(prev);
+      setPostError(err instanceof Error ? err.message : 'Failed to update post status.');
+    }
+  };
+
 
   const handleDeletePost = async (id: string) => {
     if (publicView) {
@@ -530,100 +563,23 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
             </div>
           )}
 
-          {/* Wall Posts Tab */}
+          {/* Wall Posts Tab — a post manager for the owner (status views +
+              lifecycle actions), and a read-only published list for the public
+              view. */}
           {activeTab === 'wall' && (
             <div>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold">Wall Posts ({wallPosts.length})</h2>
-                {!publicView && (
-                  <button
-                    onClick={() => { setEditingPost(null); setShowPostForm(true); }}
-                    className="flex items-center gap-2 bg-mission-600 hover:bg-mission-700 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:scale-105"
-                  >
-                    <Plus className="w-4 h-4" />
-                    New Post
-                  </button>
-                )}
-              </div>
-
-              {postError && (
-                <p className="text-sm text-red-400 mb-4" role="alert">{postError}</p>
-              )}
-
               {wallLoading && (
                 <p className="text-sm text-gray-500 mb-4">Loading posts…</p>
               )}
-
-              {showPostForm && (
-                <PostFormEditor
-                  post={editingPost}
-                  saving={postSaving}
-                  onSave={async (post) => {
-                    await handleSavePost(post, Boolean(editingPost));
-                    setShowPostForm(false);
-                    setEditingPost(null);
-                  }}
-                  onCancel={() => { setShowPostForm(false); setEditingPost(null); }}
-                />
-              )}
-
-              <div className="space-y-4">
-                {wallPosts.length === 0 && !showPostForm && (
-                  <div className="text-center py-12 bg-gray-800 border border-gray-700 rounded-2xl">
-                    <MessageSquare className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                    <p className="text-gray-500">No wall posts yet. Share an update with your supporters.</p>
-                  </div>
-                )}
-                {wallPosts.map((post, i) => (
-                  <div key={i} className="bg-gray-800 border border-gray-700 rounded-xl p-5 flex flex-col gap-3">
-                    <div className="flex items-start justify-between group">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold">{post.title}</h3>
-                          <Calendar className="w-3.5 h-3.5 text-gray-500" />
-                          <span className="text-xs text-gray-500">Draft</span>
-                        </div>
-                        <p className="text-gray-400 text-sm line-clamp-2">{post.content}</p>
-                      </div>
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                        {!publicView && (
-                          <>
-                            <button
-                              onClick={() => setSharingIdx(sharingIdx === i ? null : i)}
-                              className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                              aria-label="Share post"
-                            >
-                              <Share2 className="w-4 h-4 text-gray-400" />
-                            </button>
-                            <button
-                              onClick={() => { setEditingPost(post); setShowPostForm(true); }}
-                              className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                            >
-                              <Edit3 className="w-4 h-4 text-gray-400" />
-                            </button>
-                            <button
-                              onClick={() => handleDeletePost(post.id)}
-                              disabled={postSaving}
-                              className="p-2 hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                              aria-label="Delete post"
-                            >
-                              <Trash2 className="w-4 h-4 text-red-400" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    {sharingIdx === i && (
-                      <div className="border-t border-gray-700 pt-3">
-                        <SocialShare
-                          title={post.title}
-                          text={post.content}
-                        />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <PostManager
+                posts={wallPosts}
+                publicView={publicView}
+                saving={postSaving}
+                error={postError}
+                onSave={handleSavePost}
+                onDelete={handleDeletePost}
+                onTransition={handlePostTransition}
+              />
             </div>
           )}
 
@@ -717,63 +673,6 @@ function TripFormEditor({
         <button type="submit" disabled={saving} className="flex items-center gap-2 bg-mission-600 hover:bg-mission-700 px-5 py-2 rounded-full text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed">
           <Save className="w-4 h-4" />
           {trip ? 'Update Trip' : 'Save Trip'}
-        </button>
-        <button type="button" onClick={onCancel} className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 px-5 py-2 rounded-full text-sm transition-all">
-          <X className="w-4 h-4" />
-          Cancel
-        </button>
-      </div>
-    </form>
-  );
-}
-
-/* Post Form sub-component */
-function PostFormEditor({
-  post,
-  saving = false,
-  onSave,
-  onCancel,
-}: {
-  post: WallPost | null;
-  saving?: boolean;
-  onSave: (post: WallPost) => void;
-  onCancel: () => void;
-}) {
-  const [form, setForm] = useState<WallPost>(
-    post || { id: `new-${Date.now()}`, title: '', content: '', date: new Date().toISOString().slice(0, 10) }
-  );
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.title || !form.content) return;
-    onSave(form);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="bg-gray-800 border border-gray-700 rounded-2xl p-6 mb-6">
-      <h3 className="text-lg font-semibold mb-4">{post ? 'Edit Post' : 'New Wall Post'}</h3>
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-400 mb-1">Title</label>
-        <input
-          type="text"
-          value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
-          className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-mission-500 transition-colors"
-        />
-      </div>
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-400 mb-1">Content</label>
-        <textarea
-          rows={4}
-          value={form.content}
-          onChange={(e) => setForm({ ...form, content: e.target.value })}
-          className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-mission-500 transition-colors resize-none"
-        />
-      </div>
-      <div className="flex items-center gap-3">
-        <button type="submit" disabled={saving} className="flex items-center gap-2 bg-mission-600 hover:bg-mission-700 px-5 py-2 rounded-full text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-          <Save className="w-4 h-4" />
-          {post ? 'Update Post' : 'Publish Post'}
         </button>
         <button type="button" onClick={onCancel} className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 px-5 py-2 rounded-full text-sm transition-all">
           <X className="w-4 h-4" />

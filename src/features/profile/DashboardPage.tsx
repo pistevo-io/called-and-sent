@@ -3,17 +3,26 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   User, MapPin, Edit3, Plus, Trash2, Save, X, MessageSquare,
-  Settings, LogOut
+  Settings, LogOut, Globe, Instagram, Facebook, HandHeart
 } from 'lucide-react';
 import { useRequireAuth, useSessionState } from '../auth/useAuthGuards';
 import { signOut, resolveProfileSlug } from '../auth/authHelpers';
-import { getProfile } from '../../shared/api/profile';
+import { getProfile, type ProfileLinks, type ProfileLinkKey } from '../../shared/api/profile';
 import { wallPostsApi } from '../../shared/api/wallPosts';
 import { tripsApi } from '../../shared/api/trips';
 import type { MissionTrip } from '../../shared/types/MissionTrip';
 import type { WallPost } from '../../shared/types/WallPost';
 import PostManager from './PostManager';
 import type { WallPostStatus } from '../../shared/types/WallPost';
+
+/** Icons + labels for the four named slots of the public links block, in
+ * canonical display order. Only entries actually set on the profile render. */
+const PROFILE_LINK_UI: Array<{ key: ProfileLinkKey; label: string; icon: React.ElementType }> = [
+  { key: 'website', label: 'Website', icon: Globe },
+  { key: 'instagram', label: 'Instagram', icon: Instagram },
+  { key: 'facebook', label: 'Facebook', icon: Facebook },
+  { key: 'giving', label: 'Give', icon: HandHeart },
+];
 
 /** Shared auth-aware top nav for the dashboard (and its public read-only view).
  * Reuses the same session logic as the landing nav so logged-in users always
@@ -143,6 +152,8 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
   const [profileName, setProfileName] = useState('');
   const [profileBio, setProfileBio] = useState('');
   const [profilePhoto, setProfilePhoto] = useState('');
+  // The public links block (up to four named slots) for the read-only card.
+  const [profileLinks, setProfileLinks] = useState<ProfileLinks>({});
 
   // Loading flags for the public (read-only) view while it fetches the slug's
   // data from the API — covers the loading state of loading/empty/error/success.
@@ -236,8 +247,10 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
           setProfileName(p.displayName ?? decodeURIComponent(slug));
           if (p.bio != null) setProfileBio(p.bio);
           if (p.photoUrl) setProfilePhoto(p.photoUrl);
+          if (p.links) setProfileLinks(p.links);
         } else {
           setProfileName(decodeURIComponent(slug));
+          setProfileLinks({});
         }
         setProfileLoading(false);
       })
@@ -409,6 +422,9 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
     { key: 'wall', icon: MessageSquare, label: 'Wall Posts' },
   ];
 
+  // Only the link slots actually set on the profile render, in canonical order.
+  const presentLinks = PROFILE_LINK_UI.filter(({ key }) => Boolean(profileLinks[key]));
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Nav */}
@@ -447,6 +463,33 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
                 <p className="text-white whitespace-pre-line">{profileBio}</p>
               ) : (
                 <p className="text-gray-500">No bio shared yet.</p>
+              )}
+            </div>
+
+            {/* Public links block — only present entries render, as icon buttons. */}
+            <div className="mt-6 pt-5 border-t border-gray-700/60" data-testid="public-profile-links">
+              <span className="block text-sm font-medium text-gray-400 mb-3">Links</span>
+              {profileLoading ? (
+                <p className="text-gray-500">Loading…</p>
+              ) : presentLinks.length > 0 ? (
+                <div className="flex flex-wrap gap-3">
+                  {presentLinks.map(({ key, label, icon: Icon }) => (
+                    <a
+                      key={key}
+                      href={profileLinks[key]}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={label}
+                      title={label}
+                      className="flex items-center gap-2 bg-gray-900 border border-gray-700 hover:border-mission-500 hover:text-mission-400 rounded-full px-4 py-2 text-sm transition-colors"
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span>{label}</span>
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500">No links shared yet.</p>
               )}
             </div>
           </div>

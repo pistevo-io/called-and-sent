@@ -30,6 +30,22 @@ export class ProfileApiError extends Error {
   }
 }
 
+/**
+ * The four named slots of the profile links block — the cap is 4 by design
+ * (website + socials + giving). Mirrors the API's server-owned vocabulary.
+ */
+export const PROFILE_LINK_KEYS = [
+  'website',
+  'instagram',
+  'facebook',
+  'giving',
+] as const;
+
+export type ProfileLinkKey = (typeof PROFILE_LINK_KEYS)[number];
+
+/** A links block: only the four known keys, each holding a full URL string. */
+export type ProfileLinks = Partial<Record<ProfileLinkKey, string>>;
+
 /** Body for the POST/PUT upsert — the exact fields the backend accepts. */
 export interface ProfileUpsert {
   slug?: string;
@@ -37,6 +53,7 @@ export interface ProfileUpsert {
   bio?: string;
   photoUrl?: string | null;
   theme?: string;
+  links?: ProfileLinks | null;
 }
 
 /** Shape returned by GET /api/profile (display_name → displayName, etc.). */
@@ -46,6 +63,33 @@ export interface ProfilePayload {
   bio: string | null;
   photoUrl: string | null;
   theme: string;
+  links: ProfileLinks;
+}
+
+/**
+ * Normalize a raw links map into a clean ProfileLinks object with only valid,
+ * URL-shaped values under the known keys. Empty/whitespace entries are dropped,
+ * unknown keys are ignored, and malformed URLs become null. Mirrors the
+ * server-side sanitizer so the UI and the network layer agree on the shape.
+ */
+export function sanitizeProfileLinks(
+  input: Record<string, unknown> | null | undefined,
+): ProfileLinks {
+  const links: ProfileLinks = {};
+  for (const key of PROFILE_LINK_KEYS) {
+    const value = input?.[key];
+    if (typeof value !== 'string' || value.trim() === '') continue;
+    let url: URL;
+    try {
+      url = new URL(value.trim());
+    } catch {
+      continue;
+    }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') continue;
+    if (!url.hostname) continue;
+    links[key] = url.toString();
+  }
+  return links;
 }
 
 /** Result of POST /api/upload — the stored R2 object key + its public URL. */

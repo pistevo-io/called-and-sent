@@ -5,6 +5,7 @@ import {
   getProfile,
   upsertProfile,
   uploadImage,
+  sanitizeProfileLinks,
   ProfileApiError,
 } from './profile';
 
@@ -39,6 +40,7 @@ describe('getProfile', () => {
         bio: 'Missionary',
         photoUrl: 'https://cdn/x.png',
         theme: 'dark',
+        links: { website: 'https://example.org' },
       },
     });
 
@@ -50,6 +52,7 @@ describe('getProfile', () => {
     expect(profile!.bio).toBe('Missionary');
     expect(profile!.photoUrl).toBe('https://cdn/x.png');
     expect(profile!.theme).toBe('dark');
+    expect(profile!.links).toEqual({ website: 'https://example.org' });
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/profile?slug=k',
       expect.objectContaining({ headers: { Accept: 'application/json' } }),
@@ -83,7 +86,11 @@ describe('getProfile', () => {
 describe('upsertProfile', () => {
   it('POSTs JSON and returns the persisted slug', async () => {
     const fetchMock = mockFetch({ ok: true, slug: 'k' }, { status: 200 });
-    const slug = await upsertProfile({ displayName: 'Keerthi', bio: 'hi' });
+    const slug = await upsertProfile({
+      displayName: 'Keerthi',
+      bio: 'hi',
+      links: { website: 'https://example.org', giving: 'https://give.example.org/u' },
+    });
     expect(slug).toBe('k');
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe('/api/profile');
@@ -92,6 +99,7 @@ describe('upsertProfile', () => {
     expect(JSON.parse(init.body as string)).toEqual({
       displayName: 'Keerthi',
       bio: 'hi',
+      links: { website: 'https://example.org', giving: 'https://give.example.org/u' },
     });
   });
 
@@ -138,7 +146,7 @@ describe('uploadImage', () => {
     });
     const file = new File(['img'], 'headshot.png', { type: 'image/png' });
     await uploadImage(file);
-    const [_, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     const form = init.body as FormData;
     expect((form.get('file') as File).name).toBe('headshot.png');
   });
@@ -149,5 +157,48 @@ describe('uploadImage', () => {
       status: 400,
       message: 'Unsupported file type',
     });
+  });
+});
+
+describe('sanitizeProfileLinks', () => {
+  it('keeps valid http(s) URLs under the known keys, normalized', () => {
+    expect(
+      sanitizeProfileLinks({
+        website: 'https://example.org',
+        instagram: 'http://instagram.com/you',
+      }),
+    ).toEqual({
+      website: 'https://example.org/',
+      instagram: 'http://instagram.com/you',
+    });
+  });
+
+  it('drops empty and whitespace-only entries', () => {
+    expect(sanitizeProfileLinks({ website: '', facebook: '   ' })).toEqual({});
+  });
+
+  it('drops non-URL and non-http(s) values', () => {
+    expect(
+      sanitizeProfileLinks({
+        website: 'not a url',
+        giving: 'ftp://example.org/file',
+        instagram: 'javascript:alert(1)',
+      }),
+    ).toEqual({});
+  });
+
+  it('ignores unknown keys (keeps the block capped at the four known slots)', () => {
+    expect(
+      sanitizeProfileLinks({ website: 'https://a.org', youtube: 'https://youtube.com/x' }),
+    ).toEqual({ website: 'https://a.org/' });
+  });
+
+  it('treats null / non-string values as unset', () => {
+    expect(sanitizeProfileLinks({ website: null, instagram: 42 })).toEqual({});
+  });
+
+  it('tolerates null / undefined input', () => {
+    expect(sanitizeProfileLinks(null)).toEqual({});
+    expect(sanitizeProfileLinks(undefined)).toEqual({});
   });
 });

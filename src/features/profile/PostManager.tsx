@@ -20,7 +20,13 @@ const VIEWS: { key: WallView; label: string; accent: string; badge: string }[] =
   { key: 'archived', label: 'Archived', accent: 'bg-gray-600', badge: 'text-gray-400' },
 ];
 
-const POST_TYPES = ['update', 'testimony', 'prayer', 'praise', 'scripture'];
+const POST_TYPES = ['update', 'testimony', 'prayer', 'praise', 'scripture'] as const;
+
+/** Visitor-facing type filter on the public wall. `all` shows every published post. */
+type TypeFilter = 'all' | (typeof POST_TYPES)[number];
+
+/** Label helper for a post type (chip / card copy). `updates` -> `Updates` etc. */
+const typeLabel = (t: string) => (t ? t[0].toUpperCase() + t.slice(1) : 'Update');
 
 function statusOf(post: WallPost): WallPostStatus {
   return post.status ?? 'draft';
@@ -48,6 +54,8 @@ export default function PostManager({
   onTransition,
 }: PostManagerProps) {
   const [view, setView] = useState<WallView>('published');
+  // Visitor-facing type filter — only used in the public wall.
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [showForm, setShowForm] = useState(false);
   const [editingPost, setEditingPost] = useState<WallPost | null>(null);
   const [sharingId, setSharingId] = useState<string | null>(null);
@@ -61,7 +69,9 @@ export default function PostManager({
   );
 
   const visiblePosts = publicView
-    ? posts.filter((p) => statusOf(p) === 'published')
+    ? posts.filter(
+        (p) => statusOf(p) === 'published' && (typeFilter === 'all' || p.postType === typeFilter),
+      )
     : posts.filter((p) => statusOf(p) === view);
 
   const openNew = () => {
@@ -81,10 +91,30 @@ export default function PostManager({
   if (publicView) {
     return (
       <div className="space-y-4">
+        {/* Visitor-facing type filter chips (All / Testimony / Prayer / …). */}
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter posts by type">
+          <FilterChip
+            label="All"
+            active={typeFilter === 'all'}
+            onClick={() => setTypeFilter('all')}
+          />
+          {POST_TYPES.map((t) => (
+            <FilterChip
+              key={t}
+              label={typeLabel(t)}
+              active={typeFilter === t}
+              onClick={() => setTypeFilter(t)}
+            />
+          ))}
+        </div>
         {visiblePosts.length === 0 ? (
           <div className="text-center py-12 bg-gray-800 border border-gray-700 rounded-2xl">
             <Send className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-            <p className="text-gray-500">No published updates yet.</p>
+            <p className="text-gray-500">
+              {typeFilter === 'all'
+                ? 'No published updates yet.'
+                : `No ${typeLabel(typeFilter).toLowerCase()} posts yet.`}
+            </p>
           </div>
         ) : (
           visiblePosts.map((post) => (
@@ -356,6 +386,34 @@ function StatusAction({
       }`}
     >
       <Icon className="w-3.5 h-3.5" />
+      {label}
+    </button>
+  );
+}
+
+/** Filter chip for the public wall's visitor-facing type filter. Toggle
+ *  (All / type) with `aria-pressed` for assistive tech. Mirrors the tab
+ *  treatment: solid mission on the active chip, muted surface otherwise. */
+function FilterChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
+        active
+          ? 'bg-mission-600 text-white shadow-lg'
+          : 'bg-gray-800 border border-gray-700 text-gray-400 hover:text-white hover:border-mission-500'
+      }`}
+    >
       {label}
     </button>
   );

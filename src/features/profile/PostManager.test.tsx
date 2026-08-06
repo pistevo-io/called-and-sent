@@ -174,6 +174,59 @@ describe('Public read-only view (isolated)', () => {
     expect(screen.queryByRole('button', { name: /New Post/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Delete post' })).toBeNull();
   });
+
+  it('shows the type filter chips (All + each post type) and defaults to All', () => {
+    render(<PostManager posts={[publishedPost]} publicView saving={false} error={null}
+      onSave={noop} onDelete={noop} onTransition={noop} />);
+
+    // "All" chip is active by default; every type chip renders.
+    const all = screen.getByRole('button', { name: 'All' });
+    expect(all).toBeTruthy();
+    expect(all.getAttribute('aria-pressed')).toBe('true');
+    for (const label of ['Testimony', 'Prayer', 'Update', 'Praise', 'Scripture']) {
+      expect(screen.getByRole('button', { name: label })).toBeTruthy();
+    }
+
+    // All view shows every published post (the published one here).
+    expect(screen.getByText('Published Post')).toBeTruthy();
+  });
+
+  it('filters published posts by type via the chips, and resets on All', () => {
+    const testimony = { ...publishedPost, id: 'p2', title: 'A Testimony', postType: 'testimony' };
+    const prayer = { ...publishedPost, id: 'p3', title: 'A Prayer', postType: 'prayer' };
+    render(<PostManager posts={[publishedPost, testimony, prayer]} publicView saving={false} error={null}
+      onSave={noop} onDelete={noop} onTransition={noop} />);
+
+    // Default All: every published post visible.
+    expect(screen.getByText('Published Post')).toBeTruthy();
+    expect(screen.getByText('A Testimony')).toBeTruthy();
+    expect(screen.getByText('A Prayer')).toBeTruthy();
+
+    // Testimony filter: only the testimony remains.
+    fireEvent.click(screen.getByRole('button', { name: 'Testimony' }));
+    expect(screen.queryByText('Published Post')).toBeNull();
+    expect(screen.getByText('A Testimony')).toBeTruthy();
+    expect(screen.queryByText('A Prayer')).toBeNull();
+
+    // Prayer filter: only the prayer remains.
+    fireEvent.click(screen.getByRole('button', { name: 'Prayer' }));
+    expect(screen.queryByText('A Testimony')).toBeNull();
+    expect(screen.getByText('A Prayer')).toBeTruthy();
+
+    // Back to All: everything returns.
+    fireEvent.click(screen.getByRole('button', { name: 'All' }));
+    expect(screen.getByText('Published Post')).toBeTruthy();
+    expect(screen.getByText('A Testimony')).toBeTruthy();
+    expect(screen.getByText('A Prayer')).toBeTruthy();
+  });
+
+  it('shows a type-specific empty message when a filter matches no posts', () => {
+    render(<PostManager posts={[publishedPost]} publicView saving={false} error={null}
+      onSave={noop} onDelete={noop} onTransition={noop} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Scripture' }));
+    expect(screen.getByText(/no scripture posts yet/i)).toBeTruthy();
+  });
 });
 
 describe('Post manager wired through DashboardPage (mocked API)', () => {

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Lock, KeyRound, ArrowLeft } from 'lucide-react';
 import { authClient } from './auth';
+import { validateNewPassword, PASSWORD_REQUIREMENTS_TEXT } from './passwordPolicy';
 
 /**
  * Landing page for the emailed password-reset link. Reads the one-time `token`
@@ -13,26 +14,31 @@ import { authClient } from './auth';
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token');
+
+  // Capture the one-time token on mount, then strip it from the address bar so
+  // it doesn't linger in browser history, screenshots, or referrer headers.
+  const [token] = useState(() => searchParams.get('token'));
+
+  useEffect(() => {
+    if (token) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [token]);
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Mirror the "links expire after 15 minutes" note from the forgot page.
-  const invalidToken = !token || token === 'INVALID_TOKEN';
-
-  useEffect(() => {
-    if (invalidToken) {
-      setError('This reset link is invalid or has expired. Please request a new one.');
-    }
-  }, [invalidToken]);
+  // Neon redirects invalid/expired links with ?error=INVALID_TOKEN and no
+  // token param, so a missing token is the invalid state.
+  const invalidToken = !token;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters long.');
+    const passwordError = validateNewPassword(newPassword);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -87,7 +93,7 @@ export default function ResetPasswordPage() {
               <KeyRound className="w-10 h-10 mx-auto text-muted-foreground" />
               <h2 className="text-xl font-semibold text-foreground">Invalid reset link</h2>
               <p className="text-muted-foreground text-sm">
-                This reset link is invalid or has expired. Reset links only work for 15 minutes —
+                This reset link is invalid or has expired. Reset links are temporary —
                 request a new one and try again.
               </p>
               <a
@@ -110,13 +116,14 @@ export default function ResetPasswordPage() {
                     id="new-password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Min. 8 characters"
+                    placeholder="At least 8 characters"
                     required
                     minLength={8}
                     autoComplete="new-password"
                     className="w-full pl-10 pr-4 py-3 bg-background border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-mission-500 transition-colors"
                   />
                 </div>
+                <p className="mt-1.5 text-sm text-muted-foreground">{PASSWORD_REQUIREMENTS_TEXT}</p>
               </div>
 
               <div>
@@ -140,7 +147,10 @@ export default function ResetPasswordPage() {
               </div>
 
               {error && (
-                <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm">
+                <div
+                  role="alert"
+                  className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm"
+                >
                   {error}
                 </div>
               )}

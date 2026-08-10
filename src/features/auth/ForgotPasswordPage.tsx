@@ -67,7 +67,8 @@ export default function ForgotPasswordPage() {
               <h2 className="text-xl font-semibold text-foreground">Check your email</h2>
               <p className="text-muted-foreground text-sm">
                 If an account exists for <span className="text-foreground">{email}</span>, we've
-                sent a link to reset your password. The link expires after 15 minutes.
+                sent a link to reset your password. The link is temporary — request a new
+                one if it expires.
               </p>
               <a
                 href="/login"
@@ -101,7 +102,10 @@ export default function ForgotPasswordPage() {
               </div>
 
               {error && (
-                <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm">
+                <div
+                  role="alert"
+                  className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm"
+                >
                   {error}
                 </div>
               )}

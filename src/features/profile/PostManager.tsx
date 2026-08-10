@@ -37,6 +37,9 @@ interface PostManagerProps {
   posts: WallPost[];
   /** Read-only / no auth when true — hides tabs and all write controls. */
   publicView: boolean;
+  /** Visitor-facing theme for public surfaces (profile.theme). The owner post
+   *  manager always stays dark; only the public wall flips with the theme. */
+  theme?: 'dark' | 'light';
   saving: boolean;
   error: string | null;
   onSave: (post: WallPost, isEdit: boolean) => void | Promise<void>;
@@ -47,6 +50,7 @@ interface PostManagerProps {
 export default function PostManager({
   posts,
   publicView,
+  theme = 'dark',
   saving,
   error,
   onSave,
@@ -89,6 +93,7 @@ export default function PostManager({
   const toggleShare = (id: string) => setSharingId((cur) => (cur === id ? null : id));
 
   if (publicView) {
+    const light = theme === 'light';
     return (
       <div className="space-y-4">
         {/* Visitor-facing type filter chips (All / Testimony / Prayer / …). */}
@@ -97,6 +102,7 @@ export default function PostManager({
             label="All"
             active={typeFilter === 'all'}
             onClick={() => setTypeFilter('all')}
+            light={light}
           />
           {POST_TYPES.map((t) => (
             <FilterChip
@@ -104,12 +110,13 @@ export default function PostManager({
               label={typeLabel(t)}
               active={typeFilter === t}
               onClick={() => setTypeFilter(t)}
+              light={light}
             />
           ))}
         </div>
         {visiblePosts.length === 0 ? (
-          <div className="text-center py-12 bg-gray-800 border border-gray-700 rounded-2xl">
-            <Send className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+          <div className={`text-center py-12 ${light ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'} border rounded-2xl`}>
+            <Send className={`w-12 h-12 mx-auto mb-3 ${light ? 'text-gray-300' : 'text-gray-600'}`} />
             <p className="text-gray-500">
               {typeFilter === 'all'
                 ? 'No published updates yet.'
@@ -122,6 +129,7 @@ export default function PostManager({
               key={post.id}
               post={post}
               publicView
+              light={light}
               sharing={sharingId === post.id}
               onToggleShare={() => toggleShare(post.id)}
             />
@@ -228,6 +236,7 @@ function PostCard({
   publicView = false,
   saving = false,
   sharing = false,
+  light = false,
   onToggleShare,
   onEdit,
   onDelete,
@@ -237,19 +246,22 @@ function PostCard({
   publicView?: boolean;
   saving?: boolean;
   sharing?: boolean;
+  light?: boolean;
   onToggleShare?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
   onTransition?: (s: WallPostStatus) => void;
 }) {
   const status = statusOf(post);
+  const surface = light ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700';
+  const divider = light ? 'border-gray-200' : 'border-gray-700';
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-xl p-5 flex flex-col gap-3">
+    <div className={`${surface} border rounded-xl p-5 flex flex-col gap-3`}>
       <div className="flex items-start justify-between group">
         <div>
           <div className="flex items-center gap-2 mb-1">
             {post.postType && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300 uppercase tracking-wide">
+              <span className={`text-xs px-2 py-0.5 rounded-full uppercase tracking-wide ${light ? 'bg-gray-100 text-gray-600' : 'bg-gray-700 text-gray-300'}`}>
                 {post.postType}
               </span>
             )}
@@ -257,7 +269,7 @@ function PostCard({
             <Calendar className="w-3.5 h-3.5 text-gray-500" />
             <span className="text-xs text-gray-500">{post.date}</span>
           </div>
-          <p className="text-gray-400 text-sm line-clamp-2">{post.content}</p>
+          <p className={`text-sm line-clamp-2 ${light ? 'text-gray-600' : 'text-gray-400'}`}>{post.content}</p>
         </div>
         {!publicView && onEdit && (
           <div className="flex items-center gap-2 shrink-0 ml-4">
@@ -297,7 +309,7 @@ function PostCard({
 
       {/* Lifecycle actions — only the transitions valid from the current status. */}
       {!publicView && onTransition && status !== 'draft' && (
-        <div className="flex items-center gap-3 border-t border-gray-700 pt-3">
+        <div className={`flex items-center gap-3 border-t pt-3 ${divider}`}>
           {status === 'archived'
             ? (
               <>
@@ -335,7 +347,7 @@ function PostCard({
         </div>
       )}
       {!publicView && onTransition && status === 'draft' && (
-        <div className="flex items-center gap-3 border-t border-gray-700 pt-3">
+        <div className={`flex items-center gap-3 border-t pt-3 ${divider}`}>
           <StatusAction
             icon={Send}
             label="Publish"
@@ -353,7 +365,7 @@ function PostCard({
       )}
 
       {sharing && (
-        <div className="border-t border-gray-700 pt-3">
+        <div className={`border-t pt-3 ${divider}`}>
           <SocialShare title={post.title} text={post.content} />
         </div>
       )}
@@ -398,10 +410,12 @@ function FilterChip({
   label,
   active,
   onClick,
+  light = false,
 }: {
   label: string;
   active: boolean;
   onClick: () => void;
+  light?: boolean;
 }) {
   return (
     <button
@@ -411,7 +425,9 @@ function FilterChip({
       className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
         active
           ? 'bg-mission-600 text-white shadow-lg'
-          : 'bg-gray-800 border border-gray-700 text-gray-400 hover:text-white hover:border-mission-500'
+          : light
+            ? 'bg-white border border-gray-200 text-gray-600 hover:text-gray-900 hover:border-mission-500'
+            : 'bg-gray-800 border border-gray-700 text-gray-400 hover:text-white hover:border-mission-500'
       }`}
     >
       {label}

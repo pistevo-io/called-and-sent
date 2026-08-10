@@ -33,6 +33,28 @@ across both contexts, so the contract is: **same origin, two bindings, kept in
 sync.** Renaming would require threading the Vite var into the Function bundle,
 which is not how Pages Functions receive bindings.
 
+## Reset-link redirect: Neon `trustedOrigins` (dashboard config, no code)
+
+The forgot-password flow calls `authClient.requestPasswordReset` with
+`redirectTo: ${window.location.origin}/reset-password` (see
+`src/features/auth/ForgotPasswordPage.tsx`). The emailed link lands back on
+that origin with a `?token=...` query param, which `ResetPasswordPage` reads to
+submit the new password.
+
+Because Neon Managed Better Auth hosts no reset page itself, the **redirect
+origin must be in the auth server's `trustedOrigins`** or the emailed-link
+redirect is rejected by Neon's origin check. This is configured in the Neon
+dashboard (not in this repo), so keep it in sync with the deployment:
+
+- **Production:** the prod origin (the domain serving the Pages site) must be
+  in `trustedOrigins`.
+- **Local dev:** `http://localhost:5173` must be in `trustedOrigins` for the
+  emailed link to land on the Vite dev server.
+
+If a reset link opens with an "invalid" state immediately, first confirm the
+origins above are listed in Neon — the `?error=INVALID_TOKEN` redirect (no
+`token` param) is how Neon reports a blocked redirect.
+
 ## Other bindings (declared in `wrangler.jsonc`)
 
 - `called_and_sent` — D1 database (read/write profiles, trips, wall posts).

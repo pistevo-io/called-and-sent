@@ -31,11 +31,12 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, params }) =>
   const url = new URL(request.url);
   const target = `${env.BETTER_AUTH_URL.replace(/\/+$/, '')}/${route}${url.search}`;
 
-  // Forward the request without browser-only metadata: the Neon origin check
-  // (403 INVALID_ORIGIN on Sec-Fetch-Site: cross-site) must not see them.
+  // Forward the request without browser fetch-metadata: the Neon origin check
+  // (403 INVALID_ORIGIN) keys on Sec-Fetch-Site: cross-site. Origin/Referer are
+  // KEPT — Neon's sign-up requires an Origin when callbackURL is relative
+  // (400 MISSING_ORIGIN otherwise), and curl-style requests with Origin but no
+  // Sec-Fetch pass the weak origin check.
   const headers = new Headers(request.headers);
-  headers.delete('origin');
-  headers.delete('referer');
   headers.delete('sec-fetch-site');
   headers.delete('sec-fetch-mode');
   headers.delete('sec-fetch-dest');

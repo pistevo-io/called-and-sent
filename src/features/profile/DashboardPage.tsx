@@ -5,7 +5,7 @@ import {
   User, MapPin, Edit3, Plus, Trash2, Save, X, MessageSquare,
   Settings, LogOut, Globe, Instagram, Facebook, HandHeart
 } from 'lucide-react';
-import { useRequireAuth, useSessionState } from '../auth/useAuthGuards';
+import { useRequireAuth, useSessionState } from '../auth/authHooks';
 import { signOut, resolveProfileSlug } from '../auth/authHelpers';
 import { getProfile, type ProfileLinks, type ProfileLinkKey } from '../../shared/api/profile';
 import { wallPostsApi } from '../../shared/api/wallPosts';
@@ -190,7 +190,7 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
     }
     // Owner view: the API effects below (keyed on auth) hydrate trips + wall posts
     // from the session slug. We intentionally start from empty here — no localStorage.
-  }, [slug]); // re-run if the public slug changes (API fetch will target it)
+  }, [publicView, slug]); // re-run if the public slug or view mode changes (API fetch targets it)
 
   // Owner view: the API is the source of truth for trips. On submit we POST/PUT
   // (see handleSaveTrip), so we load persisted trips back here or a reload would

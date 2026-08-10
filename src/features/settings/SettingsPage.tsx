@@ -14,7 +14,7 @@ import {
   Facebook,
   HandHeart,
 } from 'lucide-react';
-import { useSessionState } from '../auth/useAuthGuards';
+import { useSessionState } from '../auth/authHooks';
 import { resolveProfileSlug } from '../auth/authHelpers';
 import {
   getProfile,

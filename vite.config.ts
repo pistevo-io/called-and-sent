@@ -169,4 +169,29 @@ export default defineConfig({
     }),
   ],
   appType: 'spa',
+  build: {
+    // @neondatabase/auth-ui is a single monolithic UI kit (~560 kB minified)
+    // that cannot be split further without circular chunk errors (it imports
+    // neon-js which re-exports auth-ui pieces). Isolate it in its own vendor
+    // chunk and raise the warning ceiling for that known vendor size.
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        // Vendor chunking: keep the eager entry (landing + profile router) lean
+        // by isolating heavy third-party deps into long-cacheable chunks. Route
+        // components are already split via React.lazy in App.tsx.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (id.includes('@neondatabase')) return 'vendor-auth';
+          if (id.includes('framer-motion')) return 'vendor-motion';
+          if (id.includes('lucide-react')) return 'vendor-icons';
+          if (id.includes('react-router')) return 'vendor-router';
+          if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/scheduler/') || id.includes('react/jsx-runtime')) {
+            return 'vendor-react';
+          }
+          return undefined;
+        },
+      },
+    },
+  },
 })

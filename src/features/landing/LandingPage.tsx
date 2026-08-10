@@ -197,7 +197,7 @@ export default function LandingPage() {
             Called & Sent gives every missionary a dignified, beautiful home on the web.
             One link. Your entire ministry.
           </p>
-          <p className="text-gray-600 text-sm">
+          <p className="text-gray-400 text-sm">
             Coming soon. Built for missionaries, by a missionary.
           </p>
         </motion.div>

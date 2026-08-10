@@ -231,7 +231,7 @@ export default function PostManager({
   );
 }
 
-function PostCard({
+export function PostCard({
   post,
   publicView = false,
   saving = false,

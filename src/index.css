@@ -9,6 +9,13 @@
   }
 }
 
+/* BRAND.md dark theme: the app is hardcoded dark (Background #111827).
+   Force color-scheme dark at the root so native controls/scrollbars stay
+   dark even before the auth theme script runs or if it is absent. */
+:root {
+  color-scheme: dark;
+}
+
 /* Override Better Auth UI to dark theme */
 :root {
   --ba-primary: #0284c7;

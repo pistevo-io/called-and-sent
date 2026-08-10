@@ -13,6 +13,7 @@ import { tripsApi } from '../../shared/api/trips';
 import type { MissionTrip } from '../../shared/types/MissionTrip';
 import type { WallPost } from '../../shared/types/WallPost';
 import PostManager from './PostManager';
+import PrayerRequests from './PrayerRequests';
 import type { WallPostStatus } from '../../shared/types/WallPost';
 
 /** Icons + labels for the four named slots of the public links block, in
@@ -493,6 +494,14 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
               )}
             </div>
           </div>
+        )}
+
+        {/* Prayer Requests — prominent free-tier section on the public profile.
+            Reuses the wall's published Prayer posts (design decision t_06589a52):
+            no separate schema/form; the missionary's prayer posts ARE the
+            section. Owner dashboard keeps authoring in the wall tab. */}
+        {publicView && (
+          <PrayerRequests posts={wallPosts} loading={wallLoading} />
         )}
 
         {/* Tabs */}

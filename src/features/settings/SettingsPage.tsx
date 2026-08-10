@@ -64,6 +64,10 @@ export default function SettingsPage() {
   // Field-level validation feedback for the links block (empty = valid/unset).
   const [linkErrors, setLinkErrors] = useState<Record<string, boolean>>({});
 
+  // Appearance state — the visitor-facing theme of the public profile
+  // (persisted server-side as profile.theme; default 'dark').
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
   // Network / status state.
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -110,6 +114,8 @@ export default function SettingsPage() {
         setFirstName(first);
         setLastName(rest.join(' '));
         setBio(profile.bio ?? '');
+        // Hydrate the persisted theme selection (server default 'dark').
+        setTheme(profile.theme === 'light' ? 'light' : 'dark');
         // Hydrate the four link slots from the persisted links block.
         const nextLinks: Record<string, string> = { ...linkInputs };
         for (const { key } of LINK_FIELDS) {
@@ -152,22 +158,29 @@ export default function SettingsPage() {
   };
 
   const handleSave = async () => {
-    if (activeSection !== 'profile' || saving) return;
+    // The save bar covers the profile + appearance sections (both persist
+    // server-side). Password/notifications are placeholder UI for now.
+    if ((activeSection !== 'profile' && activeSection !== 'appearance') || saving) return;
 
-    // Only valid URLs persist (matching the server sanitizer). The links block
-    // is capped at the four known slots, so at most 4 links can be saved.
+    // Only valid URLs persist (matching the server sanitizer). The links
+    // block is capped at the four known slots, so at most 4 links can be
+    // saved. The full payload is sent on BOTH sections: the server upsert
+    // replaces the row wholesale (missing fields fall back to null/'dark'),
+    // so an appearance-only save must carry the profile fields and a profile
+    // save must carry the theme — otherwise one section clobbers the other.
     const links: ProfileLinks = sanitizeProfileLinks({ ...linkInputs });
+    const displayName = `${firstName.trim()} ${lastName.trim()}`.trim();
 
     setSaving(true);
     setSaveError(null);
     setSaved(false);
     try {
-      const displayName = `${firstName.trim()} ${lastName.trim()}`.trim();
       await upsertProfile(
         {
           displayName: displayName || undefined,
           bio: bio.trim(),
           links,
+          theme,
         },
         'PUT',
       );
@@ -507,9 +520,10 @@ export default function SettingsPage() {
                       <button
                         key={t.value}
                         type="button"
-                        aria-pressed={t.value === 'dark'}
+                        aria-pressed={t.value === theme}
+                        onClick={() => setTheme(t.value as 'dark' | 'light')}
                         className={`border-2 ${
-                          t.value === 'dark'
+                          t.value === theme
                             ? 'border-mission-500 bg-mission-500/10'
                             : 'border-gray-700 hover:border-gray-600'
                         } rounded-xl p-4 text-left transition-all`}
@@ -537,13 +551,15 @@ export default function SettingsPage() {
             </motion.div>
           )}
 
-          {/* Save bar — only profile fields (identity + links) are persisted server-side today. */}
+          {/* Save bar — profile fields (identity + links) and the appearance
+              theme are persisted server-side; password/notifications are
+              placeholder UI. */}
           <div className="flex items-center gap-3 mt-8 pt-6 border-t border-gray-800">
             <button
               onClick={handleSave}
-              disabled={activeSection !== 'profile' || loading || saving}
+              disabled={(activeSection !== 'profile' && activeSection !== 'appearance') || loading || saving}
               className={`flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold transition-all shadow-lg ${
-                activeSection !== 'profile' || loading || saving
+                (activeSection !== 'profile' && activeSection !== 'appearance') || loading || saving
                   ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
                   : 'bg-mission-600 hover:bg-mission-700 text-white hover:scale-105 hover:shadow-mission-500/30'
               }`}

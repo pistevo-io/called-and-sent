@@ -26,11 +26,14 @@ const PROFILE_LINK_UI: Array<{ key: ProfileLinkKey; label: string; icon: React.E
 
 /** Shared auth-aware top nav for the dashboard (and its public read-only view).
  * Reuses the same session logic as the landing nav so logged-in users always
- * see Dashboard / Profile / Sign Out instead of a confusing "Sign In" link. */
-function DashboardNav({ publicView }: { publicView: boolean }) {
+ * see Dashboard / Profile / Sign Out instead of a confusing "Sign In" link.
+ * `theme` lets the public view render light surfaces (profile.theme); the
+ * owner dashboard always passes the dark default. */
+function DashboardNav({ publicView, theme = 'dark' }: { publicView: boolean; theme?: 'dark' | 'light' }) {
   const { state, user } = useSessionState();
   const profileSlug = resolveProfileSlug(user);
   const [signingOut, setSigningOut] = useState(false);
+  const light = theme === 'light';
 
   const handleSignOut = async () => {
     if (signingOut) return;
@@ -43,9 +46,9 @@ function DashboardNav({ publicView }: { publicView: boolean }) {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur border-b border-gray-800">
+    <nav className={`sticky top-0 z-50 backdrop-blur border-b ${light ? 'bg-white/95 border-gray-200' : 'bg-gray-900/95 border-gray-800'}`}>
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <Link to="/" className="text-xl font-bold tracking-tight">
+        <Link to="/" className={`text-xl font-bold tracking-tight ${light ? 'text-gray-900' : ''}`}>
           Called <span className="text-mission-500">&</span> Sent
         </Link>
 
@@ -54,7 +57,7 @@ function DashboardNav({ publicView }: { publicView: boolean }) {
             {!publicView && (
               <Link
                 to="/settings"
-                className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors text-sm"
+                className={`flex items-center gap-1.5 transition-colors text-sm ${light ? 'text-gray-600 hover:text-gray-900' : 'text-gray-400 hover:text-white'}`}
               >
                 <Settings className="w-4 h-4" />
                 Settings
@@ -62,13 +65,13 @@ function DashboardNav({ publicView }: { publicView: boolean }) {
             )}
             <Link
               to="/dashboard"
-              className="text-sm font-medium text-gray-300 hover:text-white px-4 py-2 rounded-full border border-gray-600 hover:border-mission-500 transition-all"
+              className={`text-sm font-medium px-4 py-2 rounded-full border transition-all ${light ? 'text-gray-700 hover:text-gray-900 border-gray-300 hover:border-mission-500' : 'text-gray-300 hover:text-white border-gray-600 hover:border-mission-500'}`}
             >
               Dashboard
             </Link>
             <Link
               to={`/@${profileSlug}`}
-              className="text-sm font-medium text-gray-300 hover:text-white px-4 py-2 rounded-full border border-gray-600 hover:border-mission-500 transition-all"
+              className={`text-sm font-medium px-4 py-2 rounded-full border transition-all ${light ? 'text-gray-700 hover:text-gray-900 border-gray-300 hover:border-mission-500' : 'text-gray-300 hover:text-white border-gray-600 hover:border-mission-500'}`}
             >
               Profile
             </Link>
@@ -86,7 +89,7 @@ function DashboardNav({ publicView }: { publicView: boolean }) {
           <div className="flex items-center gap-3">
             <Link
               to="/login"
-              className="text-sm font-medium text-gray-300 hover:text-white px-4 py-2 rounded-full border border-gray-600 hover:border-mission-500 transition-all"
+              className={`text-sm font-medium px-4 py-2 rounded-full border transition-all ${light ? 'text-gray-700 hover:text-gray-900 border-gray-300 hover:border-mission-500' : 'text-gray-300 hover:text-white border-gray-600 hover:border-mission-500'}`}
             >
               Log in
             </Link>
@@ -154,6 +157,9 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
   const [profilePhoto, setProfilePhoto] = useState('');
   // The public links block (up to four named slots) for the read-only card.
   const [profileLinks, setProfileLinks] = useState<ProfileLinks>({});
+  // The missionary's visitor-facing theme (profile.theme) — the public view
+  // renders light/dark surfaces from it. Owner dashboard stays dark.
+  const [profileTheme, setProfileTheme] = useState<'dark' | 'light'>('dark');
 
   // Loading flags for the public (read-only) view while it fetches the slug's
   // data from the API — covers the loading state of loading/empty/error/success.
@@ -248,9 +254,11 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
           if (p.bio != null) setProfileBio(p.bio);
           if (p.photoUrl) setProfilePhoto(p.photoUrl);
           if (p.links) setProfileLinks(p.links);
+          setProfileTheme(p.theme === 'light' ? 'light' : 'dark');
         } else {
           setProfileName(decodeURIComponent(slug));
           setProfileLinks({});
+          setProfileTheme('dark');
         }
         setProfileLoading(false);
       })
@@ -425,10 +433,22 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
   // Only the link slots actually set on the profile render, in canonical order.
   const presentLinks = PROFILE_LINK_UI.filter(({ key }) => Boolean(profileLinks[key]));
 
+  // Theme surfaces for the public view (profile.theme). The owner dashboard
+  // always renders the dark app shell; only /@slug flips with the theme.
+  const light = publicView && profileTheme === 'light';
+  const pageSurface = light ? 'bg-faith-cream text-gray-900' : 'bg-gray-900 text-white';
+  const cardSurface = light ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700';
+  const labelText = light ? 'text-gray-500' : 'text-gray-400';
+  const primaryText = light ? 'text-gray-900' : 'text-white';
+  const secondaryText = light ? 'text-gray-600' : 'text-gray-400';
+  const linkChip = light
+    ? 'bg-gray-100 border-gray-200 hover:border-mission-500 hover:text-mission-600'
+    : 'bg-gray-900 border-gray-700 hover:border-mission-500 hover:text-mission-400';
+
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className={`min-h-screen ${pageSurface}`}>
       {/* Nav */}
-      <DashboardNav publicView={publicView} />
+      <DashboardNav publicView={publicView} theme={profileTheme} />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
         <h1 className="text-3xl font-bold mb-8">{publicView ? 'Missionary Profile' : 'Your Dashboard'}</h1>
@@ -437,9 +457,9 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
             (owner) view keeps profile editing in /settings, so there is no inline
             Profile tab here. Anon visitors must never be able to mutate this. */}
         {publicView && (
-          <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 sm:p-8 mb-8">
+          <div className={`${cardSurface} border rounded-2xl p-6 sm:p-8 mb-8`}>
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden shrink-0">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center overflow-hidden shrink-0 ${light ? 'bg-gray-200' : 'bg-gray-700'}`}>
                 {profilePhoto ? (
                   <img src={profilePhoto} alt="" className="w-full h-full object-cover" />
                 ) : (
@@ -447,28 +467,28 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
                 )}
               </div>
               <div>
-                <span className="block text-sm font-medium text-gray-400 mb-1.5">Display Name</span>
+                <span className={`block text-sm font-medium mb-1.5 ${labelText}`}>Display Name</span>
                 {profileLoading ? (
                   <p className="text-gray-500">Loading…</p>
                 ) : (
-                  <p className="text-white text-lg font-semibold">{profileName || decodeURIComponent(slug ?? '')}</p>
+                  <p className={`text-lg font-semibold ${primaryText}`}>{profileName || decodeURIComponent(slug ?? '')}</p>
                 )}
               </div>
             </div>
             <div>
-              <span className="block text-sm font-medium text-gray-400 mb-1.5">Bio</span>
+              <span className={`block text-sm font-medium mb-1.5 ${labelText}`}>Bio</span>
               {profileLoading ? (
                 <p className="text-gray-500">Loading…</p>
               ) : profileBio ? (
-                <p className="text-white whitespace-pre-line">{profileBio}</p>
+                <p className={`whitespace-pre-line ${primaryText}`}>{profileBio}</p>
               ) : (
                 <p className="text-gray-500">No bio shared yet.</p>
               )}
             </div>
 
             {/* Public links block — only present entries render, as icon buttons. */}
-            <div className="mt-6 pt-5 border-t border-gray-700/60" data-testid="public-profile-links">
-              <span className="block text-sm font-medium text-gray-400 mb-3">Links</span>
+            <div className={`mt-6 pt-5 border-t ${light ? 'border-gray-200' : 'border-gray-700/60'}`} data-testid="public-profile-links">
+              <span className={`block text-sm font-medium mb-3 ${labelText}`}>Links</span>
               {profileLoading ? (
                 <p className="text-gray-500">Loading…</p>
               ) : presentLinks.length > 0 ? (
@@ -481,7 +501,7 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
                       rel="noopener noreferrer"
                       aria-label={label}
                       title={label}
-                      className="flex items-center gap-2 bg-gray-900 border border-gray-700 hover:border-mission-500 hover:text-mission-400 rounded-full px-4 py-2 text-sm transition-colors"
+                      className={`flex items-center gap-2 border rounded-full px-4 py-2 text-sm transition-colors ${linkChip}`}
                     >
                       <Icon className="w-4 h-4" />
                       <span>{label}</span>
@@ -496,7 +516,7 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
         )}
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-gray-800 rounded-xl p-1 mb-8 w-fit overflow-x-auto">
+        <div className={`flex gap-1 rounded-xl p-1 mb-8 w-fit overflow-x-auto ${light ? 'bg-white border border-gray-200' : 'bg-gray-800'}`}>
           {tabs.map(({ key, icon: Icon, label }) => (
             <button
               key={key}
@@ -504,7 +524,9 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
               className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                 activeTab === key
                   ? 'bg-mission-600 text-white shadow-lg'
-                  : 'text-gray-400 hover:text-white'
+                  : light
+                    ? 'text-gray-500 hover:text-gray-900'
+                    : 'text-gray-400 hover:text-white'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -559,25 +581,27 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
 
               <div className="space-y-4">
                 {trips.length === 0 && !showTripForm && (
-                  <div className="text-center py-12 bg-gray-800 border border-gray-700 rounded-2xl">
-                    <MapPin className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                  <div className={`text-center py-12 ${cardSurface} border rounded-2xl`}>
+                    <MapPin className={`w-12 h-12 mx-auto mb-3 ${light ? 'text-gray-300' : 'text-gray-600'}`} />
                     <p className="text-gray-500">No trips yet. Add your first mission trip.</p>
                   </div>
                 )}
                 {trips.map((trip) => (
-                  <div key={trip.id} className="bg-gray-800 border border-gray-700 rounded-xl p-5 flex items-start justify-between group">
+                  <div key={trip.id} className={`${cardSurface} border rounded-xl p-5 flex items-start justify-between group`}>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold text-lg">{trip.title}</h3>
                         {trip.status && (
                           <span className={`text-xs px-2 py-0.5 rounded-full ${
-                            trip.status === 'upcoming' ? 'bg-mission-500/20 text-mission-300' : 'bg-green-500/20 text-green-300'
+                            trip.status === 'upcoming'
+                              ? light ? 'bg-mission-500/15 text-mission-700' : 'bg-mission-500/20 text-mission-300'
+                              : light ? 'bg-green-500/15 text-green-700' : 'bg-green-500/20 text-green-300'
                           }`}>
                             {trip.status}
                           </span>
                         )}
                       </div>
-                      <p className="text-gray-400 text-sm mt-1">{trip.location}, {trip.country} — {trip.date}</p>
+                      <p className={`text-sm mt-1 ${secondaryText}`}>{trip.location}, {trip.country} — {trip.date}</p>
                       <p className="text-gray-500 text-sm mt-1 line-clamp-1">{trip.description}</p>
                     </div>
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-4">
@@ -617,6 +641,7 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
               <PostManager
                 posts={wallPosts}
                 publicView={publicView}
+                theme={profileTheme}
                 saving={postSaving}
                 error={postError}
                 onSave={handleSavePost}

@@ -19,6 +19,15 @@ vi.mock('../auth/auth', () => ({
   },
 }));
 
+// Control the profile API so the public card + theme render deterministically.
+// Default: no profile row (matches the API 404 path the other tests relied on);
+// the theme tests override getProfile to return a persisted profile.
+const { getProfile } = vi.hoisted(() => ({ getProfile: vi.fn() }));
+vi.mock('../../shared/api/profile', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../shared/api/profile')>();
+  return { ...actual, getProfile };
+});
+
 import { authClient } from '../auth/auth';
 
 const anonSession = { data: { user: null, session: null } };
@@ -28,6 +37,7 @@ const authedSession = {
 
 beforeEach(() => {
   vi.mocked(authClient.getSession).mockResolvedValue(anonSession as any);
+  getProfile.mockResolvedValue(null);
 });
 
 afterEach(() => {
@@ -124,5 +134,46 @@ describe('Auth-gated routes remain gated', () => {
       </MemoryRouter>
     );
     expect(await screen.findByText('LOGIN_PAGE_MARKER')).toBeTruthy();
+  });
+});
+
+describe('Public profile theme render (profile.theme)', () => {
+  it('renders the LIGHT page surfaces when the profile theme is light', async () => {
+    getProfile.mockResolvedValue({
+      slug: 'k',
+      displayName: 'Keerthi',
+      bio: 'Missionary',
+      photoUrl: null,
+      theme: 'light',
+      links: {},
+    });
+    const { container } = renderPublicProfile('/@k');
+
+    await screen.findByText('Keerthi');
+    // ProfilePage wraps DashboardPage; the LAST .min-h-screen is the inner
+    // DashboardPage root, which flips to the BRAND.md light background
+    // (Faith Cream) and dark text instead of the dark shell.
+    const roots = container.querySelectorAll('.min-h-screen');
+    const pageRoot = roots[roots.length - 1];
+    expect(pageRoot.className).toContain('bg-faith-cream');
+    expect(pageRoot.className).toContain('text-gray-900');
+  });
+
+  it('renders the DARK page surfaces by default (or theme dark)', async () => {
+    getProfile.mockResolvedValue({
+      slug: 'k',
+      displayName: 'Keerthi',
+      bio: null,
+      photoUrl: null,
+      theme: 'dark',
+      links: {},
+    });
+    const { container } = renderPublicProfile('/@k');
+
+    await screen.findByText('Keerthi');
+    const roots = container.querySelectorAll('.min-h-screen');
+    const pageRoot = roots[roots.length - 1];
+    expect(pageRoot.className).toContain('bg-gray-900');
+    expect(pageRoot.className).toContain('text-white');
   });
 });

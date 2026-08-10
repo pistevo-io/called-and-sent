@@ -1,5 +1,5 @@
 import { authClient } from './auth';
-import type { SessionUser } from './useAuthGuards';
+import type { SessionUser } from './authHooks';
 
 /**
  * Resolve the logged-in user's profile slug for use in nav/profile links.

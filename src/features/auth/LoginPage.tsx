@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { authClient } from './auth';
-import { useRedirectIfAuthed } from './useAuthGuards';
+import { useRedirectIfAuthed } from './authHooks';
 
 export default function LoginPage() {
   // Logged-in visitors shouldn't see the login form; send them to ?from= or /dashboard.

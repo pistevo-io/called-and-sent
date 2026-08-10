@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Globe, Users, Heart, MapPin, ArrowRight, LogOut } from 'lucide-react';
 import Footer from '../../shared/ui/Footer';
-import { useSessionState } from '../auth/useAuthGuards';
+import { useSessionState } from '../auth/authHooks';
 import { signOut, resolveProfileSlug } from '../auth/authHelpers';
 
 /** Sticky landing nav that reflects auth state: logged-out visitors see Log in /

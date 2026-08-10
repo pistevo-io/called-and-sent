@@ -30,13 +30,23 @@ vi.mock('../../shared/api/profile', async (importOriginal) => {
 
 import { authClient } from '../auth/auth';
 
-const anonSession = { data: { user: null, session: null } };
+// The real Better Auth getSession response type is a large generated union
+// (full Session/user columns). The public profile UI only reads user id/slug/
+// name and session id, so fixtures narrow through `unknown` — never `any` —
+// to keep the mock honest about the fields that matter.
+type SessionResponse = Awaited<ReturnType<typeof authClient.getSession>>;
+
+const anonSession = {
+  data: { user: null, session: null },
+  error: null,
+} as unknown as SessionResponse;
 const authedSession = {
   data: { user: { id: '1', slug: 'k', name: 'Keerthi' }, session: { id: 's1' } },
-};
+  error: null,
+} as unknown as SessionResponse;
 
 beforeEach(() => {
-  vi.mocked(authClient.getSession).mockResolvedValue(anonSession as any);
+  vi.mocked(authClient.getSession).mockResolvedValue(anonSession);
   getProfile.mockResolvedValue(null);
 });
 
@@ -72,7 +82,7 @@ describe('Public profile (/@slug)', () => {
   });
 
   it('renders for AUTHED users with NO redirect to /login', async () => {
-    vi.mocked(authClient.getSession).mockResolvedValue(authedSession as any);
+    vi.mocked(authClient.getSession).mockResolvedValue(authedSession);
     renderPublicProfile('/@k');
 
     expect((await screen.findAllByText(/My Trips/)).length).toBeGreaterThan(0);
@@ -94,7 +104,7 @@ describe('Public profile (/@slug)', () => {
 
 describe('Owner dashboard vs public view', () => {
   it('owner (authed) dashboard shows the Add Trip edit control', async () => {
-    vi.mocked(authClient.getSession).mockResolvedValue(authedSession as any);
+    vi.mocked(authClient.getSession).mockResolvedValue(authedSession);
     render(
       <MemoryRouter>
         <DashboardPage />
@@ -104,7 +114,7 @@ describe('Owner dashboard vs public view', () => {
   });
 
   it('public view hides Add Trip even when the visitor is authed', async () => {
-    vi.mocked(authClient.getSession).mockResolvedValue(authedSession as any);
+    vi.mocked(authClient.getSession).mockResolvedValue(authedSession);
     render(
       <MemoryRouter>
         <DashboardPage publicView defaultTab="trips" />
@@ -117,7 +127,7 @@ describe('Owner dashboard vs public view', () => {
 
 describe('Auth-gated routes remain gated', () => {
   it('anon hitting /dashboard is redirected to /login', async () => {
-    vi.mocked(authClient.getSession).mockResolvedValue(anonSession as any);
+    vi.mocked(authClient.getSession).mockResolvedValue(anonSession);
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
         <Routes>

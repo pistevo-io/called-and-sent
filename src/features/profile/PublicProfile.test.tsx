@@ -119,6 +119,33 @@ describe('Public profile (/@slug)', () => {
     expect(getTrips).not.toHaveBeenCalledWith('@k');
     expect(getWallPosts).not.toHaveBeenCalledWith('@k');
   });
+
+  it('dedupes identical location/country in the trips list (Southeast Asia row)', async () => {
+    // Legacy D1 row: location 'Southeast Asia' AND country 'Southeast Asia'.
+    // The list must show the value once — never "Southeast Asia, Southeast
+    // Asia" — even before the seed data is corrected.
+    getTrips.mockResolvedValue([
+      {
+        id: '7',
+        location: 'Southeast Asia',
+        country: 'Southeast Asia',
+        date: 'February 2026',
+        title: 'Southeast Asia Evangelism',
+        description: 'Gospel outreach in an unreached region.',
+        image: null,
+        images: [],
+      },
+    ]);
+    renderPublicProfile('/@k');
+
+    const tripsTab = await screen.findByRole('button', { name: /My Trips/ });
+    fireEvent.click(tripsTab);
+
+    expect(
+      await screen.findByText('Southeast Asia — February 2026'),
+    ).toBeTruthy();
+    expect(screen.queryByText('Southeast Asia, Southeast Asia')).toBeNull();
+  });
 });
 
 describe('Owner dashboard vs public view', () => {

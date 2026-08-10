@@ -14,6 +14,7 @@ import type { MissionTrip } from '../../shared/types/MissionTrip';
 import type { WallPost } from '../../shared/types/WallPost';
 import PostManager from './PostManager';
 import PrayerRequests from './PrayerRequests';
+import { formatTripLocation } from './tripLocation';
 import type { WallPostStatus } from '../../shared/types/WallPost';
 
 /** Icons + labels for the four named slots of the public links block, in
@@ -610,7 +611,7 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
                           </span>
                         )}
                       </div>
-                      <p className={`text-sm mt-1 ${secondaryText}`}>{trip.location}, {trip.country} — {trip.date}</p>
+                      <p className={`text-sm mt-1 ${secondaryText}`}>{formatTripLocation(trip)} — {trip.date}</p>
                       <p className="text-gray-500 text-sm mt-1 line-clamp-1">{trip.description}</p>
                     </div>
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-4">

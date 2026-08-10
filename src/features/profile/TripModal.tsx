@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, MapPin, Calendar, Clock, Users, Heart, Share2 } from 'lucide-react';
 import type { MissionTrip } from '../../shared/types/MissionTrip';
 import SocialShare from '../../shared/ui/SocialShare';
+import { formatTripLocation } from './tripLocation';
 
 interface TripModalProps {
   trip: MissionTrip | null;
@@ -58,7 +59,7 @@ export default function TripModal({ trip, onClose }: TripModalProps) {
                 <h2 className="text-2xl sm:text-4xl font-bold mb-2">{trip.title}</h2>
                 <div className="flex items-center gap-2 text-lg">
                   <MapPin className="w-5 h-5" />
-                  <span>{trip.location}, {trip.country}</span>
+                  <span>{formatTripLocation(trip)}</span>
                 </div>
               </div>
 
@@ -170,7 +171,7 @@ export default function TripModal({ trip, onClose }: TripModalProps) {
                   the generic window.location. */}
               <SocialShare
                 title={trip.title}
-                text={`${trip.title} — ${trip.location}, ${trip.country}. ${trip.description}`}
+                text={`${trip.title} — ${formatTripLocation(trip)}. ${trip.description}`}
                 url={window.location.pathname}
               />
             </div>

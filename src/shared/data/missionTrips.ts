@@ -29,7 +29,7 @@ export const missionTrips: MissionTrip[] = [
   {
     id: '7',
     location: 'Southeast Asia',
-    country: 'Southeast Asia',
+    country: '',
     coordinates: { lng: 101.9758, lat: 12.8797 },
     date: 'February 2026',
     duration: '1 week',

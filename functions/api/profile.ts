@@ -112,7 +112,7 @@ async function handleUpsert(request: Request, env: Env): Promise<Response> {
   const body = await parseJson<ProfileBody>(request);
   if (!body) return json({ error: 'Invalid JSON body.' }, 422);
 
-  const slug = body.slug?.trim() || user.slug || user.username || user.id;
+  const slug = body.slug?.trim() || user.slug || user.username || 'k';
   const displayName = body.displayName ?? user.name ?? null;
   const bio = body.bio ?? null;
   const photoUrl = body.photoUrl ?? user.image ?? null;

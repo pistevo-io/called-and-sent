@@ -107,9 +107,9 @@ beforeEach(async () => {
   // Pages handlers read env from wrangler config, and `miniflare.vars` from
   // the vitest plugin does NOT propagate to the Pages `context.env`, so in the
   // test runner `env.BETTER_AUTH_URL` is undefined. `requireUser` (auth.ts)
-  // therefore builds `"undefined/api/auth/get-session"` — matching on the
-  // pathname substring keeps this harness decoupled from the missing var while
-  // still exercising the real cookie-forwarding path. `wrangler.jsonc` is left
+  // therefore builds `"undefined/get-session"` — matching on the pathname
+  // substring keeps this harness decoupled from the missing var while still
+  // exercising the real cookie-forwarding path. `wrangler.jsonc` is left
   // untouched so no fake `BETTER_AUTH_URL` ships to production.
   const realFetch = globalThis.fetch.bind(globalThis);
   vi.stubGlobal(
@@ -119,7 +119,7 @@ beforeEach(async () => {
       init?: RequestInit,
     ): Promise<Response> => {
       const target = typeof input === 'string' ? input : (input as Request).url;
-      if (target.includes('/api/auth/get-session')) {
+      if (target.includes('/get-session')) {
         const cookie = (init?.headers as Record<string, string> | undefined)?.['Cookie'] ?? '';
         const match = /token=([^;]+)/.exec(cookie);
         const user = match ? TOKEN_FOR_USER[match[1]] : undefined;

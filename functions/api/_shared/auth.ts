@@ -35,10 +35,12 @@ export async function requireUser(
   }
 
   // Forward the caller's identity to Better Auth to resolve the session.
+  // BETTER_AUTH_URL is the Neon auth mount root (e.g. .../neondb/auth) and the
+  // session route lives DIRECTLY under it (GET only) — no /api/auth prefix.
   let res: Response;
   try {
-    res = await fetch(`${env.BETTER_AUTH_URL}/api/auth/get-session`, {
-      method: 'POST',
+    res = await fetch(`${env.BETTER_AUTH_URL.replace(/\/+$/, '')}/get-session`, {
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         ...(cookie ? { Cookie: cookie } : {}),

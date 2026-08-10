@@ -13,42 +13,47 @@ A modern, interactive web application showcasing Christian mission trips around 
 
 ## Setup Instructions
 
-### 1. Get a Mapbox Access Token
+### 1. Install Dependencies
 
-1. Go to [Mapbox](https://www.mapbox.com/) and create a free account
-2. Navigate to your [Account page](https://account.mapbox.com/)
-3. Copy your default public token or create a new one
+```bash
+npm install
+```
 
 ### 2. Configure Environment Variables
 
-Create a `.env` file in the project root:
+Create a `.env` file from the template and fill in your values:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and add your Mapbox token:
-
-```
-VITE_MAPBOX_TOKEN=pk.your_actual_mapbox_token_here
-```
-
-### 3. Update the Map Component
-
-Open `src/components/MissionMap.tsx` and replace the token constant:
-
-```typescript
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
-```
-
-### 4. Install Dependencies and Run
+The two variables that actually matter for a working local app:
 
 ```bash
-npm install
+VITE_MAPBOX_TOKEN=pk.your_actual_mapbox_token_here   # map tiles (public)
+VITE_NEON_AUTH_URL=https://your-project.neon.auth    # Better Auth origin — WITHOUT THIS, LOGIN IS DEAD
+```
+
+`VITE_NEON_AUTH_URL` is required for auth: the app builds and the login page
+renders without it, but sessions never resolve and dashboard/profile routes
+redirect to `/login` forever. There is also `VITE_TURNSTILE_SITE_KEY` for the
+contact form (leave it blank to use the bundled key).
+
+Full reference — every variable, R2/D1/Neon notes, running the Functions stack,
+and the dev-over-LAN HTTPS tip: **[docs/dev.md](docs/dev.md)**.
+
+### 3. Run
+
+```bash
 npm run dev
 ```
 
-The application will open at `http://localhost:5173`
+The application will open at `http://localhost:5173`.
+
+> Dev over LAN? Browsers treat `http://localhost` as a secure context, but a
+> LAN IP (e.g. `http://192.168.x.x:5173`) is not — the auth client crashes on
+> `crypto.randomUUID` there. Serve the dev server over HTTPS or stick to
+> localhost. See [docs/dev.md](docs/dev.md) for `mkcert`/tunnel options.
 
 ## Customizing Your Mission Trips
 

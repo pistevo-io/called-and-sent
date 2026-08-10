@@ -6,7 +6,6 @@ import {
   Lock,
   User,
   Palette,
-  Bell,
   ArrowLeft,
   Loader2,
   Globe,
@@ -24,7 +23,7 @@ import {
   type ProfileLinks,
 } from '../../shared/api/profile';
 
-type Section = 'profile' | 'password' | 'appearance' | 'notifications';
+type Section = 'profile' | 'password' | 'appearance';
 
 // Display metadata + icon for each slot of the links block (capped at 4).
 const LINK_FIELDS: Array<{
@@ -168,7 +167,6 @@ export default function SettingsPage() {
     { key: 'profile', icon: User, label: 'Profile' },
     { key: 'password', icon: Lock, label: 'Password' },
     { key: 'appearance', icon: Palette, label: 'Appearance' },
-    { key: 'notifications', icon: Bell, label: 'Notifications' },
   ];
 
   return (
@@ -417,34 +415,6 @@ export default function SettingsPage() {
                     <option>Satoshi</option>
                   </select>
                 </div>
-              </div>
-            </motion.div>
-          )}
-
-          {activeSection === 'notifications' && (
-            <motion.div
-              key="notifications"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="bg-gray-800 border border-gray-700 rounded-2xl p-6 sm:p-8"
-            >
-              <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                <Bell className="w-5 h-5 text-mission-500" />
-                Notification Preferences
-              </h2>
-              <div className="space-y-4 max-w-md">
-                {['New supporter', 'Prayer requests', 'Wall comments', 'Newsletter stats'].map((label) => (
-                  <div
-                    key={label}
-                    className="flex items-center justify-between py-3 border-b border-gray-700 last:border-0"
-                  >
-                    <div className="text-sm font-medium">{label}</div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" defaultChecked className="sr-only peer" />
-                      <div className="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-mission-600" />
-                    </label>
-                  </div>
-                ))}
               </div>
             </motion.div>
           )}

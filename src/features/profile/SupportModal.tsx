@@ -35,7 +35,7 @@ export default function SupportModal({ isOpen, onClose }: SupportModalProps) {
   useEffect(() => {
     if (isOpen && turnstileRef.current && window.turnstile && !widgetIdRef.current) {
       widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
-        sitekey: '0x4AAAAAAB5vVKg7Y7twKuIb',
+        sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAB5vVKg7Y7twKuIb',
         callback: (token: string) => {
           setTurnstileToken(token);
         },

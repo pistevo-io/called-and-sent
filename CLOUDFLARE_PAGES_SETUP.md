@@ -2,52 +2,54 @@
 
 ## Contact Form Configuration
 
-The contact form requires three bindings to be configured in the Cloudflare Pages dashboard.
+The contact form (`/api/contact`, SupportModal "Partner With Me") is
+Turnstile-verified and delivers submissions **by email** — MailChannels by
+default (free Cloudflare integration, no API key) or Resend if
+`RESEND_API_KEY` is set. It needs **no D1/KV bindings**; the old
+D1/KV/ntfy setup was removed. See `FUNCTIONS_ENV.md` for the full env
+contract.
 
-### Required Bindings
+### Required Environment Variables (Pages dashboard or `.dev.vars` locally)
 
-#### 1. D1 Database Binding
-- **Type**: D1 Database
-- **Variable name**: `DB`
-- **D1 database**: `contact-submissions`
-- **Purpose**: Stores all contact form submissions
+| Variable | Purpose |
+|---|---|
+| `TURNSTILE_SECRET_KEY` | Server-side Turnstile secret. Required in production; verification is skipped when absent (local dev). |
+| `CONTACT_TO_EMAIL` | Where submissions are delivered. |
+| `CONTACT_FROM_EMAIL` | Sender address on a domain authenticated for MailChannels in Cloudflare. |
 
-#### 2. KV Namespace Binding
-- **Type**: KV Namespace
-- **Variable name**: `CONTACT_FORM_KV`
-- **KV namespace**: Your existing KV namespace for rate limiting
-- **Purpose**: Rate limiting (10 submissions per hour per IP)
+Optional: `RESEND_API_KEY` — switch email delivery from MailChannels to
+Resend (`https://api.resend.com/emails`).
 
-#### 3. Environment Variable
-- **Variable name**: `NTFY_TOPIC`
-- **Value**: Your ntfy.sh topic name (e.g., `called-and-sent-contact`)
-- **Purpose**: Sends push notifications when someone submits the form
+Client-side build-time variable (`.env` / `.env.example`):
+`VITE_TURNSTILE_SITE_KEY` — the public Turnstile site key (SupportModal
+falls back to the previously hardcoded key when unset).
 
 ### How to Configure in Cloudflare Dashboard
 
 1. Go to **Cloudflare Dashboard** > **Workers & Pages**
 2. Click on your **called-and-sent** Pages project
-3. Go to **Settings** > **Functions**
-4. Scroll to **Bindings** section
+3. Go to **Settings** > **Functions** > **Variables**
+4. Add each variable (Production environment):
+   - `TURNSTILE_SECRET_KEY` — **Encrypt** (recommended)
+   - `CONTACT_TO_EMAIL`
+   - `CONTACT_FROM_EMAIL`
+   - `RESEND_API_KEY` (optional) — **Encrypt** (recommended)
 
-#### Add D1 Binding
-1. Click **Add binding** under "D1 database bindings"
-2. Variable name: `DB`
-3. Select your `contact-submissions` database
-4. Click **Save**
+### Authenticate the Sender Domain for MailChannels
 
-#### Add KV Binding
-1. Click **Add binding** under "KV namespace bindings"
-2. Variable name: `CONTACT_FORM_KV`
-3. Select your existing KV namespace
-4. Click **Save**
+MailChannels requires the sending domain to be authenticated in Cloudflare
+(one-time setup):
 
-#### Add Environment Variable
-1. Click **Add variable** under "Environment variables"
-2. Variable name: `NTFY_TOPIC`
-3. Value: Your ntfy.sh topic (e.g., `called-and-sent-contact`)
-4. Select **Production** environment
-5. Click **Save**
+1. In Cloudflare DNS for your domain, add a TXT record:
+   - **Name**: `_mailchannels`
+   - **Value**: `v=mc1 cfid=called-and-sent.pages.dev`
+2. `CONTACT_FROM_EMAIL` must use that domain (e.g.
+   `no-reply@calledandsent.me`).
+3. First send may take a few minutes to propagate; check the Pages function
+   logs (`Workers & Pages` > **called-and-sent** > **Functions** > **Logs**).
+
+Alternative: set `RESEND_API_KEY` and verify the `from` domain in the Resend
+account instead — no DNS record needed.
 
 ### Testing the Setup
 
@@ -55,70 +57,43 @@ After deploying:
 
 1. Visit your site: `https://calledandsent.me`
 2. Click the "Partner With Me" button
-3. Fill out the contact form
+3. Fill out the contact form (complete the Turnstile widget)
 4. Submit
 5. Check:
-   - Form should show success message
-   - You should receive ntfy notification on your phone
-   - Data should be in D1 database
+   - Form should show "Message sent successfully!"
+   - You should receive the submission email at `CONTACT_TO_EMAIL`
 
-### Viewing Submissions
-
-Query the D1 database to see submissions:
+Local smoke test against `wrangler pages dev` (with `.dev.vars` populated):
 
 ```bash
-# List all submissions
-wrangler d1 execute contact-submissions --command "SELECT * FROM submissions ORDER BY created_at DESC LIMIT 10;"
-
-# Count total submissions
-wrangler d1 execute contact-submissions --command "SELECT COUNT(*) as total FROM submissions;"
-
-# View recent submissions with formatting
-wrangler d1 execute contact-submissions --command "SELECT name, email, created_at FROM submissions ORDER BY created_at DESC LIMIT 5;"
+curl -i -X POST http://localhost:8788/api/contact \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Test","email":"test@example.com","message":"Hello","cf-turnstile-response":"dummy"}'
 ```
 
-### Setting Up ntfy Notifications on Your Phone
-
-1. Install the ntfy app:
-   - iOS: https://apps.apple.com/us/app/ntfy/id1625396347
-   - Android: https://play.google.com/store/apps/details?id=io.heckel.ntfy
-
-2. Open the app and subscribe to your topic:
-   - Click the "+" button
-   - Enter your topic name (same as `NTFY_TOPIC` variable)
-   - Click Subscribe
-
-3. You'll now receive instant notifications when someone submits the form
+Without `TURNSTILE_SECRET_KEY` locally, verification is skipped and the
+request proceeds to email delivery (MailChannels may reject unauthenticated
+senders in local dev — see logs).
 
 ### Troubleshooting
 
 **Form shows error on submit:**
-- Check that all three bindings are configured correctly
-- Make sure bindings are on "Production" environment
-- Check browser console for error messages
-- View real-time logs: Visit **Workers & Pages** > **called-and-sent** > **Functions** > **Logs**
+- Check that `CONTACT_TO_EMAIL` / `CONTACT_FROM_EMAIL` are set (handler
+  returns 500 "Contact form is not configured" otherwise).
+- Check browser console and Pages function logs.
+- With `TURNSTILE_SECRET_KEY` set, a missing/invalid token returns 400/403
+  "Security verification ..." — reload the page and redo the widget.
 
-**No ntfy notification received:**
-- Verify `NTFY_TOPIC` environment variable is set
-- Check that the topic name in the app matches exactly
-- Try sending a test notification: `curl -d "Test" ntfy.sh/your-topic-name`
-
-**Submissions not appearing in D1:**
-- Verify D1 binding is configured with variable name `DB`
-- Make sure the database has the schema created (see `schema.sql`)
-- Query the database to check: `wrangler d1 execute contact-submissions --command "SELECT * FROM submissions;"`
-
-### Rate Limiting
-
-The form has built-in rate limiting:
-- 10 submissions per hour per IP address
-- Uses Cloudflare KV for tracking
-- Resets automatically after 1 hour
+**No email received:**
+- Verify `_mailchannels` TXT record exists and `CONTACT_FROM_EMAIL` uses the
+  authenticated domain.
+- Check function logs for MailChannels/Resend non-2xx responses (handler
+  returns 502 "Failed to send message").
+- Try Resend: set `RESEND_API_KEY` and verify the `from` domain there.
 
 ### Security Features
 
-- CORS headers configured for API endpoint
-- Email validation (must contain @)
-- Required fields: name, email, message
-- IP address and User-Agent logged for spam prevention
-- Rate limiting prevents abuse
+- Cloudflare Turnstile verification (server-side, fails closed)
+- Required fields + email format validation
+- Message length limits
+- CORS preflight handled for the API endpoint

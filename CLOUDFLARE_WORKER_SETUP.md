@@ -1,6 +1,13 @@
 # Cloudflare Worker Setup Guide
 Contact Form with DDoS Protection & Bot Filtering
 
+> **DEPRECATED** — this guide describes the original standalone Worker
+> (`worker.js`) approach. The current contact form is a **Pages Function** at
+> `functions/api/contact.ts` (`POST /api/contact`) with Turnstile verification
+> and email delivery via MailChannels/Resend. See `FUNCTIONS_ENV.md` and
+> `CLOUDFLARE_PAGES_SETUP.md` for the current setup. The steps below are kept
+> for historical reference only.
+
 ## Prerequisites
 - Cloudflare account (free tier works)
 - Domain connected to Cloudflare (or use workers.dev subdomain)

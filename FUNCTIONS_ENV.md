@@ -37,3 +37,28 @@ which is not how Pages Functions receive bindings.
 
 - `called_and_sent` — D1 database (read/write profiles, trips, wall posts).
 - `called_and_sent_media` — R2 bucket for uploaded images.
+
+## Contact form (`/api/contact`)
+
+The support modal's contact form (Turnstile-verified email submission) reads
+the following plain environment variables (not bindings — no D1/KV storage;
+submissions are delivered by email only):
+
+- `TURNSTILE_SECRET_KEY` — server-side Cloudflare Turnstile secret. **Required
+  in production.** When set, `cf-turnstile-response` is verified against
+  siteverify before the email is sent; a missing/invalid token gets a
+  400/403. When absent (local dev), verification is skipped so the form stays
+  testable without secrets.
+- `CONTACT_TO_EMAIL` — where submissions are delivered (required).
+- `CONTACT_FROM_EMAIL` — sender address on a domain authenticated for
+  MailChannels in Cloudflare (required). MailChannels is the free Cloudflare
+  integration (no API key); the sending domain must have the `_mailchannels`
+  TXT record (`v=mc1 cfid=...`) in Cloudflare DNS.
+- `RESEND_API_KEY` — optional. When present, email goes via Resend
+  (`https://api.resend.com/emails`) instead of MailChannels. The `from`
+  address must be a verified domain in the Resend account.
+
+The client-side Turnstile site key is a **build-time** `VITE_*` variable:
+`VITE_TURNSTILE_SITE_KEY` (see `.env.example`; SupportModal falls back to the
+previously hardcoded key when unset). The site key is public — only the
+secret (`TURNSTILE_SECRET_KEY`) is sensitive.

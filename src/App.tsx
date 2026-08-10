@@ -10,6 +10,8 @@ import { RequireAuth } from './features/auth/useAuthGuards';
 // the public profile router stay eager — they're the first paint.
 const LoginPage = lazy(() => import('./features/auth/LoginPage'));
 const SignupPage = lazy(() => import('./features/auth/SignupPage'));
+const ForgotPasswordPage = lazy(() => import('./features/auth/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./features/auth/ResetPasswordPage'));
 const PrivacyPolicy = lazy(() => import('./features/legal/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./features/legal/TermsOfService'));
 const SettingsPage = lazy(() => import('./features/settings/SettingsPage'));
@@ -35,6 +37,8 @@ export default function App() {
           <Route path="/:slug" element={<ProfileRouter />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />

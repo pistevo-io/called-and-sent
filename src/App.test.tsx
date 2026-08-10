@@ -62,6 +62,23 @@ describe('Route code-splitting (App.tsx lazy routes)', () => {
     expect(await screen.findByText('Sign in to your account')).toBeTruthy();
   });
 
+  it('lazy-loads /forgot-password', async () => {
+    renderAt('/forgot-password');
+    expect(await screen.findByText('Reset your password')).toBeTruthy();
+  });
+
+  it('lazy-loads /reset-password', async () => {
+    renderAt('/reset-password?token=abc123');
+    expect(await screen.findByText('Choose a new password')).toBeTruthy();
+  });
+
+  it('shows a Forgot password? link on /login pointing to /forgot-password', async () => {
+    renderAt('/login');
+    await screen.findByText('Sign in to your account');
+    const link = screen.getByRole('link', { name: /Forgot password\?/i });
+    expect(link.getAttribute('href')).toBe('/forgot-password');
+  });
+
   it('lazy-loads /signup', async () => {
     renderAt('/signup');
     expect(await screen.findByText('Create your account')).toBeTruthy();

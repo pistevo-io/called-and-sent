@@ -13,6 +13,7 @@ import {
   Instagram,
   Facebook,
   HandHeart,
+  KeyRound,
 } from 'lucide-react';
 import { useSessionState } from '../auth/useAuthGuards';
 import { resolveProfileSlug } from '../auth/authHelpers';
@@ -23,6 +24,11 @@ import {
   type ProfileLinkKey,
   type ProfileLinks,
 } from '../../shared/api/profile';
+import { changePassword, ProfileApiError } from './settingsApi';
+import {
+  validatePasswordForm,
+  type PasswordFieldErrors,
+} from './passwordValidation';
 
 type Section = 'profile' | 'password' | 'appearance' | 'notifications';
 
@@ -65,6 +71,16 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+
+  // Password form state. `passwordErrors` holds per-field validation messages
+  // (client-side mirror of the server policy plus server field errors).
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordErrors, setPasswordErrors] = useState<PasswordFieldErrors>({});
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
   // Resolve the owner's profile handle from the Better Auth session once it's
   // loaded. Falls back to `k` (the seeded owner slug) like the rest of the app.
@@ -161,6 +177,44 @@ export default function SettingsPage() {
       setSaveError(err instanceof Error ? err.message : 'Could not save your profile');
     } finally {
       setSaving(false);
+    }
+  };
+
+  /**
+   * Submit the change-password form: validate locally (mirroring the server
+   * policy in functions/api/_shared/passwordPolicy.ts), then call the
+   * /api/user/change-password endpoint. Field-scoped server errors are mapped
+   * back onto the matching input; anything else becomes a banner.
+   */
+  const handlePasswordSubmit = async () => {
+    if (changingPassword) return;
+
+    const errors = validatePasswordForm(currentPassword, newPassword, confirmPassword);
+    setPasswordErrors(errors);
+    setPasswordError(null);
+    setPasswordSuccess(null);
+    if (errors.currentPassword || errors.newPassword || errors.confirmPassword) return;
+
+    setChangingPassword(true);
+    try {
+      const result = await changePassword(currentPassword, newPassword, confirmPassword);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setPasswordSuccess(result.message ?? 'Your password has been changed.');
+    } catch (err) {
+      if (err instanceof ProfileApiError && err.field) {
+        const field = err.field;
+        if (field === 'currentPassword' || field === 'newPassword' || field === 'confirmPassword') {
+          setPasswordErrors((prev) => ({ ...prev, [field]: err.message }));
+        } else {
+          setPasswordError(err.message);
+        }
+      } else {
+        setPasswordError(err instanceof Error ? err.message : 'Could not change your password.');
+      }
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -330,11 +384,22 @@ export default function SettingsPage() {
               animate={{ opacity: 1, x: 0 }}
               className="bg-gray-800 border border-gray-700 rounded-2xl p-6 sm:p-8"
             >
-              <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+              <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
                 <Lock className="w-5 h-5 text-mission-500" />
                 Change Password
               </h2>
-              <div className="space-y-4 max-w-md">
+              <p className="text-sm text-gray-500 mb-6 max-w-md">
+                Use at least 8 characters with upper and lowercase letters, a number, and a special character.
+              </p>
+
+              <form
+                className="space-y-4 max-w-md"
+                noValidate
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void handlePasswordSubmit();
+                }}
+              >
                 <div>
                   <label htmlFor="settings-current-password" className="block text-sm font-medium text-gray-400 mb-1.5">
                     Current Password
@@ -342,8 +407,17 @@ export default function SettingsPage() {
                   <input
                     id="settings-current-password"
                     type="password"
-                    className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-mission-500 transition-colors"
+                    autoComplete="current-password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    aria-invalid={passwordErrors.currentPassword ? true : undefined}
+                    className={`w-full px-4 py-2.5 bg-gray-900 border rounded-lg text-white focus:outline-none focus:border-mission-500 transition-colors ${
+                      passwordErrors.currentPassword ? 'border-red-500/70' : 'border-gray-700'
+                    }`}
                   />
+                  {passwordErrors.currentPassword && (
+                    <p className="mt-1 text-xs text-red-400">{passwordErrors.currentPassword}</p>
+                  )}
                 </div>
                 <div>
                   <label htmlFor="settings-new-password" className="block text-sm font-medium text-gray-400 mb-1.5">
@@ -352,8 +426,17 @@ export default function SettingsPage() {
                   <input
                     id="settings-new-password"
                     type="password"
-                    className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-mission-500 transition-colors"
+                    autoComplete="new-password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    aria-invalid={passwordErrors.newPassword ? true : undefined}
+                    className={`w-full px-4 py-2.5 bg-gray-900 border rounded-lg text-white focus:outline-none focus:border-mission-500 transition-colors ${
+                      passwordErrors.newPassword ? 'border-red-500/70' : 'border-gray-700'
+                    }`}
                   />
+                  {passwordErrors.newPassword && (
+                    <p className="mt-1 text-xs text-red-400">{passwordErrors.newPassword}</p>
+                  )}
                 </div>
                 <div>
                   <label htmlFor="settings-confirm-password" className="block text-sm font-medium text-gray-400 mb-1.5">
@@ -362,10 +445,45 @@ export default function SettingsPage() {
                   <input
                     id="settings-confirm-password"
                     type="password"
-                    className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-mission-500 transition-colors"
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    aria-invalid={passwordErrors.confirmPassword ? true : undefined}
+                    className={`w-full px-4 py-2.5 bg-gray-900 border rounded-lg text-white focus:outline-none focus:border-mission-500 transition-colors ${
+                      passwordErrors.confirmPassword ? 'border-red-500/70' : 'border-gray-700'
+                    }`}
                   />
+                  {passwordErrors.confirmPassword && (
+                    <p className="mt-1 text-xs text-red-400">{passwordErrors.confirmPassword}</p>
+                  )}
                 </div>
-              </div>
+
+                {passwordError && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-sm text-red-300">
+                    {passwordError}
+                  </div>
+                )}
+                {passwordSuccess && (
+                  <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 text-sm text-green-400">
+                    {passwordSuccess}
+                  </div>
+                )}
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={changingPassword}
+                    className={`flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold transition-all shadow-lg ${
+                      changingPassword
+                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                        : 'bg-mission-600 hover:bg-mission-700 text-white hover:scale-105 hover:shadow-mission-500/30'
+                    }`}
+                  >
+                    {changingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                    {changingPassword ? 'Updating…' : 'Update Password'}
+                  </button>
+                </div>
+              </form>
             </motion.div>
           )}
 

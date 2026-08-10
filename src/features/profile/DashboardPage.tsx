@@ -121,7 +121,13 @@ interface DashboardPageProps {
   /** Signals the wrapping page when the public profile API resolves to NO row
    *  for this slug (getProfile → null). Lets ProfilePage hide the Partner-With-Me
    *  FAB + modals on the Not Found state so a dead link never advertises a
-   *  nonexistent missionary. */
+   *  nonexistent missionary.
+   *  NOTE: this is the RAW null signal (profile row absent), distinct from the
+   *  compound profileNotFound gate, which ALSO requires empty trips/wall posts
+   *  and successful fetches. A profile-less slug that still has trips (legacy
+   *  anomaly) hides the FAB but keeps rendering.
+   *  MUST be a stable callback (e.g. a setState setter): it is held in a ref,
+   *  so an inline arrow cannot re-trigger the profile fetch on every render. */
   onProfileMissing?: (missing: boolean) => void;
 }
 
@@ -176,6 +182,19 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
   const [tripsLoading, setTripsLoading] = useState(false);
   const [wallLoading, setWallLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
+  // True when a public content fetch (trips/wall posts) FAILED for this slug.
+  // A failed fetch is not proof the slug has no content — only a settled empty
+  // array counts for the Not Found gate below, so a transient API blip never
+  // false-404s a profile-less slug that still has trips (dogfood M1 anomaly).
+  const [contentFetchFailed, setContentFetchFailed] = useState(false);
+
+  // The onProfileMissing callback is held in a ref so the profile fetch effect
+  // below doesn't depend on its identity: an unstable inline arrow from a
+  // caller must never re-trigger the fetch on every render (see effect deps).
+  const onProfileMissingRef = useRef(onProfileMissing);
+  useEffect(() => {
+    onProfileMissingRef.current = onProfileMissing;
+  }, [onProfileMissing]);
 
   // The API is the single source of truth for trips + wall posts (see the effects
   // below). We intentionally do NOT seed from localStorage or static demo data —
@@ -190,11 +209,19 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
       let cancelled = false;
       setTripsLoading(true);
       setWallLoading(true);
+      // Reset the failure flag for each fetch run. A rejected request is NOT
+      // proof the slug has no content — only a settled empty array counts for
+      // the Not Found gate below, so a transient blip never false-404s a
+      // profile-less slug that still has trips.
+      setContentFetchFailed(false);
       Promise.all([
         tripsApi.getTrips(slug).catch(() => null),
         wallPostsApi.getWallPosts(slug).catch(() => null),
       ]).then(([apiTrips, apiPosts]) => {
         if (cancelled) return;
+        // null here means the fetch REJECTED (the .catch above) — record it so
+        // the 404 gate stays honest about what it can prove.
+        setContentFetchFailed(apiTrips === null || apiPosts === null);
         setTrips(apiTrips ?? []);
         setWallPosts(apiPosts ?? []);
         setTripsLoading(false);
@@ -260,7 +287,7 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
     // Reset the missing flag for a new slug before the fetch lands, so
     // navigating from a dead link to a real profile never keeps the 404 up.
     setProfileMissing(false);
-    onProfileMissing?.(false);
+    onProfileMissingRef.current?.(false);
     getProfile(slug)
       .then((p) => {
         if (cancelled) return;
@@ -271,14 +298,14 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
           if (p.links) setProfileLinks(p.links);
           setProfileTheme(p.theme === 'light' ? 'light' : 'dark');
           setProfileMissing(false);
-          onProfileMissing?.(false);
+          onProfileMissingRef.current?.(false);
         } else {
           // API said 404: no profile row exists for this slug.
           setProfileName(decodeURIComponent(slug));
           setProfileLinks({});
           setProfileTheme('dark');
           setProfileMissing(true);
-          onProfileMissing?.(true);
+          onProfileMissingRef.current?.(true);
         }
         setProfileLoading(false);
       })
@@ -288,13 +315,13 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
         // slug-name fallback so a blip never turns a real profile into a 404.
         setProfileName(decodeURIComponent(slug));
         setProfileMissing(false);
-        onProfileMissing?.(false);
+        onProfileMissingRef.current?.(false);
         setProfileLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [publicView, slug, onProfileMissing]);
+  }, [publicView, slug]);
 
   // Owner trip writes go to the D1 API. On submit we POST (create) or PUT (update)
   // and reconcile local state with the server-assigned id; on failure we keep the
@@ -473,10 +500,14 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
   // a plausible empty profile. The profile API resolving to null proves no row
   // exists; empty trips AND empty wall posts confirm the slug carries no legacy
   // content either (a profile-less slug that still has trips is a data anomaly
-  // and keeps rendering rather than 404ing).
+  // and keeps rendering rather than 404ing). Every fetch must also have
+  // SETTLED SUCCESSFULLY — a failed content fetch is not proof of emptiness,
+  // so contentFetchFailed blocks the 404 (a transient API blip must never
+  // false-404 a profile-less slug that still has trips).
   const profileNotFound =
     publicView &&
     profileMissing &&
+    !contentFetchFailed &&
     trips.length === 0 &&
     wallPosts.length === 0 &&
     !tripsLoading &&

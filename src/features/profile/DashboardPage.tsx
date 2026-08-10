@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   User, MapPin, Edit3, Plus, Trash2, Save, X, MessageSquare,
-  Settings, LogOut, Globe, Instagram, Facebook, HandHeart
+  Settings, LogOut, Globe, Instagram, Facebook, HandHeart, Compass
 } from 'lucide-react';
 import { useRequireAuth, useSessionState } from '../auth/authHooks';
 import { signOut, resolveProfileSlug } from '../auth/authHelpers';
@@ -119,9 +119,20 @@ interface DashboardPageProps {
    *  fetch the right profile's trips/wall posts from the API. Undefined in the
    *  owner (authed) dashboard, which resolves its slug from the session. */
   slug?: string;
+  /** Signals the wrapping page when the public profile API resolves to NO row
+   *  for this slug (getProfile → null). Lets ProfilePage hide the Partner-With-Me
+   *  FAB + modals on the Not Found state so a dead link never advertises a
+   *  nonexistent missionary.
+   *  NOTE: this is the RAW null signal (profile row absent), distinct from the
+   *  compound profileNotFound gate, which ALSO requires empty trips/wall posts
+   *  and successful fetches. A profile-less slug that still has trips (legacy
+   *  anomaly) hides the FAB but keeps rendering.
+   *  MUST be a stable callback (e.g. a setState setter): it is held in a ref,
+   *  so an inline arrow cannot re-trigger the profile fetch on every render. */
+  onProfileMissing?: (missing: boolean) => void;
 }
 
-export default function DashboardPage({ publicView = false, defaultTab = 'trips', slug }: DashboardPageProps) {
+export default function DashboardPage({ publicView = false, defaultTab = 'trips', slug, onProfileMissing }: DashboardPageProps) {
   const auth = useRequireAuth(!publicView);
   // Owner view blocks while the session resolves or until the anon redirect fires;
   // public view is always open.
@@ -162,12 +173,29 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
   // The missionary's visitor-facing theme (profile.theme) — the public view
   // renders light/dark surfaces from it. Owner dashboard stays dark.
   const [profileTheme, setProfileTheme] = useState<'dark' | 'light'>('dark');
+  // True when the public profile API resolved with NO row for this slug
+  // (getProfile → null). Drives the Not Found state when the slug also has no
+  // trips/wall posts, so a typo'd or dead link never renders a fake profile.
+  const [profileMissing, setProfileMissing] = useState(false);
 
   // Loading flags for the public (read-only) view while it fetches the slug's
   // data from the API — covers the loading state of loading/empty/error/success.
   const [tripsLoading, setTripsLoading] = useState(false);
   const [wallLoading, setWallLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
+  // True when a public content fetch (trips/wall posts) FAILED for this slug.
+  // A failed fetch is not proof the slug has no content — only a settled empty
+  // array counts for the Not Found gate below, so a transient API blip never
+  // false-404s a profile-less slug that still has trips (dogfood M1 anomaly).
+  const [contentFetchFailed, setContentFetchFailed] = useState(false);
+
+  // The onProfileMissing callback is held in a ref so the profile fetch effect
+  // below doesn't depend on its identity: an unstable inline arrow from a
+  // caller must never re-trigger the fetch on every render (see effect deps).
+  const onProfileMissingRef = useRef(onProfileMissing);
+  useEffect(() => {
+    onProfileMissingRef.current = onProfileMissing;
+  }, [onProfileMissing]);
 
   // The API is the single source of truth for trips + wall posts (see the effects
   // below). We intentionally do NOT seed from localStorage or static demo data —
@@ -182,11 +210,19 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
       let cancelled = false;
       setTripsLoading(true);
       setWallLoading(true);
+      // Reset the failure flag for each fetch run. A rejected request is NOT
+      // proof the slug has no content — only a settled empty array counts for
+      // the Not Found gate below, so a transient blip never false-404s a
+      // profile-less slug that still has trips.
+      setContentFetchFailed(false);
       Promise.all([
         tripsApi.getTrips(slug).catch(() => null),
         wallPostsApi.getWallPosts(slug).catch(() => null),
       ]).then(([apiTrips, apiPosts]) => {
         if (cancelled) return;
+        // null here means the fetch REJECTED (the .catch above) — record it so
+        // the 404 gate stays honest about what it can prove.
+        setContentFetchFailed(apiTrips === null || apiPosts === null);
         setTrips(apiTrips ?? []);
         setWallPosts(apiPosts ?? []);
         setTripsLoading(false);
@@ -242,12 +278,17 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
   }, [publicView, auth.state, auth.user, slug]);
 
   // Public read-only profile card: resolve the displayed name/bio/photo from the
-  // API by slug. Falls back to the slug itself when the profile is unknown or the
-  // API is unreachable, so the card never renders a fake name or breaks.
+  // API by slug. Falls back to the slug itself when the API is unreachable, so
+  // the card never breaks on a transient error — but a clean null (no row for
+  // this slug) is a real 404 and drives the Not Found state (dogfood M1).
   useEffect(() => {
     if (!publicView || !slug) return;
     let cancelled = false;
     setProfileLoading(true);
+    // Reset the missing flag for a new slug before the fetch lands, so
+    // navigating from a dead link to a real profile never keeps the 404 up.
+    setProfileMissing(false);
+    onProfileMissingRef.current?.(false);
     getProfile(slug)
       .then((p) => {
         if (cancelled) return;
@@ -257,16 +298,25 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
           if (p.photoUrl) setProfilePhoto(p.photoUrl);
           if (p.links) setProfileLinks(p.links);
           setProfileTheme(p.theme === 'light' ? 'light' : 'dark');
+          setProfileMissing(false);
+          onProfileMissingRef.current?.(false);
         } else {
+          // API said 404: no profile row exists for this slug.
           setProfileName(decodeURIComponent(slug));
           setProfileLinks({});
           setProfileTheme('dark');
+          setProfileMissing(true);
+          onProfileMissingRef.current?.(true);
         }
         setProfileLoading(false);
       })
       .catch(() => {
         if (cancelled) return;
+        // Transient/network error — not proof the profile is missing. Keep the
+        // slug-name fallback so a blip never turns a real profile into a 404.
         setProfileName(decodeURIComponent(slug));
+        setProfileMissing(false);
+        onProfileMissingRef.current?.(false);
         setProfileLoading(false);
       });
     return () => {
@@ -446,6 +496,51 @@ export default function DashboardPage({ publicView = false, defaultTab = 'trips'
   const linkChip = light
     ? 'bg-gray-100 border-gray-200 hover:border-mission-500 hover:text-mission-600'
     : 'bg-gray-900 border-gray-700 hover:border-mission-500 hover:text-mission-400';
+
+  // Dogfood M1: a dead or typo'd slug must render a real Not Found state, not
+  // a plausible empty profile. The profile API resolving to null proves no row
+  // exists; empty trips AND empty wall posts confirm the slug carries no legacy
+  // content either (a profile-less slug that still has trips is a data anomaly
+  // and keeps rendering rather than 404ing). Every fetch must also have
+  // SETTLED SUCCESSFULLY — a failed content fetch is not proof of emptiness,
+  // so contentFetchFailed blocks the 404 (a transient API blip must never
+  // false-404 a profile-less slug that still has trips).
+  const profileNotFound =
+    publicView &&
+    profileMissing &&
+    !contentFetchFailed &&
+    trips.length === 0 &&
+    wallPosts.length === 0 &&
+    !tripsLoading &&
+    !wallLoading &&
+    !profileLoading;
+
+  if (profileNotFound) {
+    return (
+      <div className={`min-h-screen ${pageSurface}`}>
+        {/* Nav — keep it so a dead link never strands the visitor */}
+        <DashboardNav publicView={publicView} theme={profileTheme} />
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-24 sm:py-32 text-center">
+          <div className={`${cardSurface} border rounded-2xl p-10 sm:p-14 max-w-md mx-auto`}>
+            <div className={`w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center ${light ? 'bg-gray-100' : 'bg-gray-900 border border-gray-700'}`}>
+              <Compass className={`w-8 h-8 ${light ? 'text-mission-600' : 'text-mission-400'}`} />
+            </div>
+            <h1 className="text-3xl font-bold mb-3">Profile Not Found</h1>
+            <p className={`${secondaryText} mb-8`}>
+              We couldn't find a missionary at this address. The link may be
+              misspelled, or the profile may have been removed.
+            </p>
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 bg-mission-600 hover:bg-mission-700 text-white px-6 py-3 rounded-full text-sm font-semibold transition-all hover:scale-105 shadow-lg hover:shadow-mission-500/30"
+            >
+              Back to Home
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen ${pageSurface}`}>

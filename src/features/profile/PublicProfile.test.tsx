@@ -5,8 +5,9 @@
 // edit controls (Add Trip), that the owner dashboard still shows them, and
 // that truly auth-gated routes (/dashboard) remain gated.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
+import { render, screen, fireEvent, cleanup, waitFor, act } from '@testing-library/react';
+import { MemoryRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import ProfileRouter from './ProfileRouter';
 import DashboardPage from './DashboardPage';
 import { RequireAuth } from '../auth/useAuthGuards';
@@ -20,8 +21,20 @@ vi.mock('../auth/auth', () => ({
 }));
 
 // Control the profile API so the public card + theme render deterministically.
-// Default: no profile row (matches the API 404 path the other tests relied on);
-// the theme tests override getProfile to return a persisted profile.
+// Default: a persisted profile row (matches a real /@k). The Not Found tests
+// override getProfile to null; the theme tests override with light/dark rows.
+function makeProfile(overrides: Partial<ProfilePayload> = {}): ProfilePayload {
+  return {
+    slug: 'k',
+    displayName: 'Keerthi',
+    bio: 'Missionary',
+    photoUrl: null,
+    theme: 'dark',
+    links: {},
+    ...overrides,
+  };
+}
+
 const { getProfile } = vi.hoisted(() => ({ getProfile: vi.fn() }));
 vi.mock('../../shared/api/profile', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../shared/api/profile')>();
@@ -29,6 +42,7 @@ vi.mock('../../shared/api/profile', async (importOriginal) => {
 });
 
 import { authClient } from '../auth/auth';
+import type { ProfilePayload } from '../../shared/api/profile';
 
 // Mock the trips/wall-posts API so slug normalization is asserted
 // deterministically (the public page fetches by the CLEANED slug).
@@ -56,7 +70,9 @@ const authedSession = {
 
 beforeEach(() => {
   vi.mocked(authClient.getSession).mockResolvedValue(anonSession);
-  getProfile.mockResolvedValue(null);
+  getProfile.mockResolvedValue(makeProfile());
+  getTrips.mockResolvedValue([]);
+  getWallPosts.mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -145,6 +161,120 @@ describe('Public profile (/@slug)', () => {
       await screen.findByText('Southeast Asia — February 2026'),
     ).toBeTruthy();
     expect(screen.queryByText('Southeast Asia, Southeast Asia')).toBeNull();
+  });
+});
+
+describe('Unknown profile slug → Not Found (dogfood M1)', () => {
+  it('renders a clear Not Found state instead of a plausible empty profile', async () => {
+    // API 404: no profile row, no trips, no wall posts for this slug.
+    getProfile.mockResolvedValue(null);
+    renderPublicProfile('/definitely-not-a-user');
+
+    expect(
+      await screen.findByRole('heading', { name: 'Profile Not Found' }),
+    ).toBeTruthy();
+    // The old fake profile must NOT render.
+    expect(screen.queryByText('No bio shared yet.')).toBeNull();
+    expect(screen.queryByText(/No trips yet/)).toBeNull();
+    // The Partner-With-Me FAB is hidden on a dead link.
+    expect(screen.queryByRole('button', { name: /Partner With Me/i })).toBeNull();
+    // A way home exists.
+    expect(screen.getByRole('link', { name: 'Back to Home' })).toBeTruthy();
+  });
+
+  it('still renders when the slug has trips even if the profile row is missing', async () => {
+    // Data anomaly: content exists but no profile row. Must NOT 404 — the
+    // page keeps the slug-name fallback so the trips remain visible.
+    getProfile.mockResolvedValue(null);
+    getTrips.mockResolvedValue([
+      {
+        id: 't1',
+        location: 'Manila',
+        country: 'Philippines',
+        coordinates: { lng: 120.98, lat: 14.6 },
+        date: '2026-03-01',
+        duration: '2 weeks',
+        title: 'Philippines 2026',
+        description: '',
+        story: '',
+        images: [],
+        highlights: [],
+        ministryType: [],
+        status: 'upcoming',
+      },
+    ]);
+    renderPublicProfile('/@k');
+
+    expect(await screen.findByText('Philippines 2026')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Profile Not Found' })).toBeNull();
+  });
+
+  it('does NOT 404 on a transient API error (keeps slug-name fallback)', async () => {
+    // Network blip: getProfile rejects, so the profile is not proven missing.
+    // The page must keep rendering (slug fallback), never a false 404.
+    getProfile.mockRejectedValue(new Error('network down'));
+    renderPublicProfile('/@k');
+
+    expect(await screen.findByText(/My Trips \(\d+\)/)).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Profile Not Found' })).toBeNull();
+  });
+
+  it('does NOT 404 when the trips fetch fails on a profile-less slug', async () => {
+    // MAJOR (review t_be60f64d): profile-less slug (legacy anomaly — trips
+    // exist without a profile row) + a transient trips API failure. A failed
+    // content fetch is NOT proof the slug has no content, so the page must
+    // keep rendering — never a false 404.
+    getProfile.mockResolvedValue(null);
+    getTrips.mockRejectedValue(new Error('network down'));
+    renderPublicProfile('/@k');
+
+    expect(await screen.findByText(/My Trips \(\d+\)/)).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Profile Not Found' })).toBeNull();
+  });
+
+  it('does NOT 404 when the wall-posts fetch fails on a profile-less slug', async () => {
+    // Symmetric to the trips-failure case: the 404 gate must treat a failed
+    // wall-posts fetch as unproven emptiness, never a false 404.
+    getProfile.mockResolvedValue(null);
+    getWallPosts.mockRejectedValue(new Error('network down'));
+    renderPublicProfile('/@k');
+
+    expect(await screen.findByText(/My Trips \(\d+\)/)).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Profile Not Found' })).toBeNull();
+  });
+
+  it('recovers when navigating dead → real without a stale 404 flash', async () => {
+    // MINOR (review t_be60f64d): start on a dead slug (404 renders), then
+    // navigate to a real slug. The page must not inherit the previous slug's
+    // 404 state (profileMissing + empty arrays) — the real profile renders.
+    getProfile.mockResolvedValue(null);
+    let navigateTo: (to: string) => void = () => {};
+    function NavProbe() {
+      const navigate = useNavigate();
+      useEffect(() => {
+        navigateTo = navigate;
+      }, [navigate]);
+      return null;
+    }
+    render(
+      <MemoryRouter initialEntries={['/@dead']}>
+        <Routes>
+          <Route path="/:slug" element={<ProfileRouter />} />
+        </Routes>
+        <NavProbe />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Profile Not Found' })).toBeTruthy();
+
+    // The profile now exists for /@k — navigating must show it, not a 404.
+    getProfile.mockResolvedValue(makeProfile());
+    act(() => navigateTo('/@k'));
+
+    expect(await screen.findByText('Keerthi')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Profile Not Found' })).toBeNull();
+    // FAB returns once the profile is no longer missing.
+    expect(screen.queryByRole('button', { name: /Partner With Me/i })).toBeTruthy();
   });
 });
 

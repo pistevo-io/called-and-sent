@@ -15,6 +15,10 @@ export default function ProfilePage({ slug }: { slug?: string }) {
   const [selectedTrip, setSelectedTrip] = useState<MissionTrip | null>(null);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
+  // Dogfood M1: when the slug resolves to NO profile (getProfile → null with no
+  // trips/posts), DashboardPage renders a Not Found state. Hide the FAB + modals
+  // too so a dead link never advertises a nonexistent missionary.
+  const [profileMissing, setProfileMissing] = useState(false);
 
   useEffect(() => {
     const checkHash = () => {
@@ -28,25 +32,37 @@ export default function ProfilePage({ slug }: { slug?: string }) {
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
       <main className="flex-1">
-        <DashboardPage publicView defaultTab="trips" slug={slug} />
+        <DashboardPage
+          key={slug}
+          publicView
+          defaultTab="trips"
+          slug={slug}
+          onProfileMissing={setProfileMissing}
+        />
       </main>
 
-      <button
-        onClick={() => setIsSupportOpen(true)}
-        className="fixed bottom-6 right-6 z-50 group"
-        aria-label="Partner With Me"
-      >
-        <div className="flex items-center gap-3 bg-gradient-to-r from-mission-600 to-mission-700 hover:from-mission-500 hover:to-mission-600 text-white px-5 py-4 rounded-full shadow-2xl hover:shadow-mission-500/50 transition-all duration-300 hover:scale-110">
-          <Heart className="w-6 h-6 animate-pulse" fill="currentColor" />
-          <span className="font-semibold hidden group-hover:inline-block transition-all duration-300">Partner With Me</span>
-        </div>
-      </button>
+      {!profileMissing && (
+        <button
+          onClick={() => setIsSupportOpen(true)}
+          className="fixed bottom-6 right-6 z-50 group"
+          aria-label="Partner With Me"
+        >
+          <div className="flex items-center gap-3 bg-gradient-to-r from-mission-600 to-mission-700 hover:from-mission-500 hover:to-mission-600 text-white px-5 py-4 rounded-full shadow-2xl hover:shadow-mission-500/50 transition-all duration-300 hover:scale-110">
+            <Heart className="w-6 h-6 animate-pulse" fill="currentColor" />
+            <span className="font-semibold hidden group-hover:inline-block transition-all duration-300">Partner With Me</span>
+          </div>
+        </button>
+      )}
 
       <Footer />
 
-      <TripModal trip={selectedTrip} onClose={() => setSelectedTrip(null)} />
-      <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
-      <SupportModal isOpen={isSupportOpen} onClose={() => setIsSupportOpen(false)} />
+      {!profileMissing && (
+        <>
+          <TripModal trip={selectedTrip} onClose={() => setSelectedTrip(null)} />
+          <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
+          <SupportModal isOpen={isSupportOpen} onClose={() => setIsSupportOpen(false)} />
+        </>
+      )}
     </div>
   );
 }

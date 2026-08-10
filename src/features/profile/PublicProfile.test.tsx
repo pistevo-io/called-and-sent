@@ -5,7 +5,7 @@
 // edit controls (Add Trip), that the owner dashboard still shows them, and
 // that truly auth-gated routes (/dashboard) remain gated.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import ProfileRouter from './ProfileRouter';
 import DashboardPage from './DashboardPage';
@@ -29,6 +29,15 @@ vi.mock('../../shared/api/profile', async (importOriginal) => {
 });
 
 import { authClient } from '../auth/auth';
+
+// Mock the trips/wall-posts API so slug normalization is asserted
+// deterministically (the public page fetches by the CLEANED slug).
+const { getTrips, getWallPosts } = vi.hoisted(() => ({
+  getTrips: vi.fn().mockResolvedValue([]),
+  getWallPosts: vi.fn().mockResolvedValue([]),
+}));
+vi.mock('../../shared/api/trips', () => ({ tripsApi: { getTrips, createTrip: vi.fn(), updateTrip: vi.fn(), deleteTrip: vi.fn() } }));
+vi.mock('../../shared/api/wallPosts', () => ({ wallPostsApi: { getWallPosts, getOwnerPosts: vi.fn().mockResolvedValue([]), createPost: vi.fn(), updatePost: vi.fn(), deletePost: vi.fn() } }));
 
 // The real Better Auth getSession response type is a large generated union
 // (full Session/user columns). The public profile UI only reads user id/slug/
@@ -99,6 +108,16 @@ describe('Public profile (/@slug)', () => {
     fireEvent.click(tripsTab);
     // Trips seeded from shared data + localStorage regardless of session.
     expect(await screen.findByText(/My Trips \(\d+\)/)).toBeTruthy();
+  });
+
+  it('normalizes the @-prefixed handle so data fetches use the bare slug', async () => {
+    renderPublicProfile('/@k');
+    // The API is keyed by the bare slug ('k') — the leading '@' must be
+    // stripped before getTrips/getWallPosts run, or the page shows empty data.
+    await waitFor(() => expect(getTrips).toHaveBeenCalledWith('k'));
+    await waitFor(() => expect(getWallPosts).toHaveBeenCalledWith('k'));
+    expect(getTrips).not.toHaveBeenCalledWith('@k');
+    expect(getWallPosts).not.toHaveBeenCalledWith('@k');
   });
 });
 
